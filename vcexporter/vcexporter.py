@@ -1,5 +1,6 @@
 from vcexporter import vcexporterconfig, vcutils
 from yamlconfig import YamlConfig
+from importlib import import_module
 import argparse
 import os
 
@@ -16,7 +17,6 @@ class VCExporter():
                                              vcenterInfo['vcenter_password'],
                                              vcenterInfo['vcenter_port'],
                                              vcenterInfo['vcenter_ignore_ssl'],)
-
 
 
 if __name__ == "__main__":
