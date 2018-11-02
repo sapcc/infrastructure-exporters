@@ -1,0 +1,10 @@
+vcenter_exporters:
+  versions_and_apis:
+    enabled: true
+    collection_interval: 480
+  vcenter_customer_vm_metrics:
+    enabled: false
+    collection_interval: 240
+  vcenter_customer_ds_metrics:
+    enabled: false
+    collection_interval: 240

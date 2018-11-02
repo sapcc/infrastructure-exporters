@@ -1,0 +1,13 @@
+{
+    "python.pythonPath": "/Users/i814196/.local/share/virtualenvs/vcenter-exporter-2-5cbiCQoj/bin",
+    "python.unitTest.unittestArgs": [
+        "-v",
+        "-s",
+        "./test",
+        "-p",
+        "test*.py"
+    ],
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": true
+}

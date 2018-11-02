@@ -1,0 +1,6 @@
+vcenter_information:
+  vcenter_hostname: vc.test.local
+  vcenter_username: administrator@vsphere.local
+  vcenter_password: password
+  vcenter_port: 443
+  vcenter_ignore_ssl: true
