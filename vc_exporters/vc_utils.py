@@ -1,6 +1,8 @@
 import ssl
+import os
 from pyVmomi import vim, vmodl
 from pyVim.connect import SmartConnect, Disconnect
+from yamlconfig import YamlConfig
 
 
 def connect_to_vcenter(host, user, pwd, port, ignore_ssl):
@@ -20,11 +22,21 @@ def connect_to_vcenter(host, user, pwd, port, ignore_ssl):
             pwd=pwd,
             port=port,
             sslContext=context)
-
     except IOError as e:
         raise SystemExit("Unable to connect to host with supplied info. Error %s: " % str(e))
-
     return si
+
+def disconnect_from_vcenter(si):
+    Disconnect(si)
+
+def get_config(configurationfile):
+    defaults = {}
+    if os.path.exists(configurationfile):
+        try:
+            config = YamlConfig(configurationfile, defaults)
+        except IOError as e:
+            print("Couldn't open configuration file: " + str(e))
+        return config
 
 def collect_properties(service_instance, view_ref, obj_type, path_set=None,
                        include_mors=False):

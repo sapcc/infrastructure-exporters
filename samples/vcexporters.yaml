@@ -1,10 +1,10 @@
 vcenter_exporters:
-  versions_and_apis:
-    enabled: true
+  apiandversions:
     collection_interval: 480
-  vcenter_customer_vm_metrics:
-    enabled: false
+    prometheus_port: 9102
+  custmervmmetrics:
     collection_interval: 240
-  vcenter_customer_ds_metrics:
-    enabled: false
+    prometheus_port: 9102
+  customerdsmetrics:
     collection_interval: 240
+    prometheus_port: 9102

@@ -1,10 +1,10 @@
 import logging
-from vcexporter.exporters import exporter
-from vcexporter.vcutils import collect_properties
+import exporter
+from vc_exporters.vc_utils import collect_properties
 from prometheus_client import start_http_server, Gauge
 from pyVmomi import vim, vmodl
 
-class apiandversions(exporter.Exporter):
+class Apiandversions(exporter.Exporter):
     
     def __init__(self, si, vcconfig):
         self.vcconfig = vcconfig
