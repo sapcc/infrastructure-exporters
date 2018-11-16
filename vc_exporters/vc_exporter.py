@@ -1,5 +1,6 @@
 import os
 import time
+import exporter
 from vc_exporters import vc_utils
 from yamlconfig import YamlConfig
 from importlib import import_module
@@ -12,8 +13,8 @@ from prometheus_client import start_http_server
 class VCExporter():
 
     def __init__(self, vcenterConfigFile, exporterConfigFile):
-        self.vcenterConfig = vc_utils.get_config(vcenterConfigFile)
-        self.vcenterExporterConfig = vc_utils.get_config(exporterConfigFile)
+        self.vcenterConfig = exporter.Exporter.get_config(vcenterConfigFile)
+        self.vcenterExporterConfig = exporter.Exporter.get_config(exporterConfigFile)
         self.vcenterInfo = self.vcenterConfig['vcenter_information']
         self.si = vc_utils.connect_to_vcenter(self.vcenterInfo['vcenter_hostname'],
                                              self.vcenterInfo['vcenter_username'],

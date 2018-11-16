@@ -2,16 +2,17 @@ import unittest
 import os
 import urllib
 import sys
-import exporter
+from importlib import import_module
 from vc_exporters import vc_utils, vc_exporter
 from vc_exporters.vc_exporter_types import api_and_versions
+from prometheus_client import start_http_server
 
 class TestExporter(unittest.TestCase):
 
 
     def setUp(self):
         self.testVCConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcconfig.yaml"
-        self.vcenterConfig = exporter.Exporter.get_config(self.testVCConfigfile)
+        self.vcenterConfig = vc_utils.get_config(self.testVCConfigfile)
         self.testExporterConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcexporters.yaml"
 
 

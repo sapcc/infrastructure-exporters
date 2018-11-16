@@ -22,7 +22,6 @@ class Customervmmetrics(exporter.Exporter):
 
     
     def collect(self):
-        region = self.vcconfig['vcenter_hostname'].split('.')[2]
         content = self.si.RetrieveContent()
         self.container = content.rootFolder
         datacenter = self.container.childEntity[0]
