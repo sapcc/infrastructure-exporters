@@ -11,9 +11,9 @@ class TestExporter(unittest.TestCase):
 
 
     def setUp(self):
-        self.testVCConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../samples/vcconfig.yaml"
+        self.testVCConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcconfig.yaml"
         self.vcenterConfig = vc_utils.get_config(self.testVCConfigfile)
-        self.testExporterConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../samples/vcexporters.yaml"
+        self.testExporterConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcexporters.yaml"
 
 
     def connect_to_vcenter(self):

@@ -1,23 +1,33 @@
 import logging
 import exporter
 from vc_exporters.vc_utils import collect_properties
-from prometheus_client import start_http_server, Gauge
-from datetime import datetime
+from prometheus_client import Gauge
+from datetime import datetime, timedelta
 from pyVmomi import vim, vmodl
 
 class Customervmmetrics(exporter.Exporter):
     
-    def __init__(self, si, vcconfig):
+    def __init__(self, si, vcconfig, exporterconfig):
         self.vcconfig = vcconfig
+        self.exporterconfig = exporterconfig
         self.si = si
         self.gauge = {}
         self.sessions_dict = {}
         self.counter_info = {}
+        self.regexs = {}
+        self.vm_properties = [
+            "runtime.powerState", "runtime.host", "config.annotation", "config.name",
+            "config.instanceUuid", "config.guestId", "summary.config.vmPathName"
+        ]
 
     
     def collect(self):
         region = self.vcconfig['vcenter_hostname'].split('.')[2]
-        content = self.si.content
+        content = self.si.RetrieveContent()
+        self.container = content.rootFolder
+        datacenter = self.container.childEntity[0]
+        self.datacentername = datacenter.name
+
         perf_manager = content.perfManager
         vm_counter_ids = perf_manager.QueryPerfCounterByLevel(level=4)
 
@@ -34,7 +44,7 @@ class Customervmmetrics(exporter.Exporter):
 
         ######## WHERE DO WE GET THE CONFIG FOR THE VMMETRICS FROM?
 
-        selected_metrics = vcconfig.get('main').get('vm_metrics')
+        selected_metrics = self.exporterconfig['vcenter_exporters']['customervmmetrics']['vm_metrics']
 
         # Populate counter_ids_to_collect from config if specified
         if selected_metrics:
@@ -71,7 +81,7 @@ class Customervmmetrics(exporter.Exporter):
         #  should be averaged across all based on vcenter time
         vch_time = self.si.CurrentTime()
         start_time = vch_time - \
-            timedelta(seconds=(self.configs['main']['vc_polling_interval'] + 60))
+            timedelta(seconds=(self.exporterconfig['vcenter_exporters']['customervmmetrics']['collection_interval'] + 60))
         end_time = vch_time - timedelta(seconds=60)
         perf_manager = self.si.content.perfManager
 
