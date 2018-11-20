@@ -1,0 +1,5 @@
+apic_information:
+    apic_host: localhost
+    apic_user: admin2
+    apic_password: password
+    apic_tenant_name: sometenant

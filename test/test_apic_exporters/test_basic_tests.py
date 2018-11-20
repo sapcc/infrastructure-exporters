@@ -1,43 +1,41 @@
 import unittest
+import requests
 import os
-import urllib
-import sys
-from importlib import import_module
-from vc_exporters import vc_utils, vc_exporter
-from vc_exporters.vc_exporter_types import api_and_versions
-from prometheus_client import start_http_server
+import json
+from exporter import Exporter
 
 class TestExporter(unittest.TestCase):
 
 
     def setUp(self):
-        self.testVCConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcconfig.yaml"
-        self.vcenterConfig = vc_utils.get_config(self.testVCConfigfile)
-        self.testExporterConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcexporters.yaml"
+        # Get credentials from file or use defaults
+        apiConfigFile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/apicconfig.yaml"
+        self.apicConfigs = Exporter.get_config(apiConfigFile)['apic_information']
+        self.proxy = {'http': '', 'https': '', 'no': '*'}
+        self.apicLoginUrl = "https://" + self.apicConfigs['apic_host'] + "/api/aaaLogin.json?"
+        self.apicMetricsUrl = "https://" + self.apicConfigs['apic_host'] + "/api/node/class/procEntity.json?"
+        self.loginPayload = {"aaaUser": {"attributes": {"name": self.apicConfigs['apic_user'], "pwd": self.apicConfigs['apic_password']}}}
+
+    def test_can_read_config_file(self):
+        self.assertEqual(self.apicConfigs['apic_user'], 'admin2')
+
+    def test_can_get_login_cookie(self): 
+        r = requests.post(self.apicLoginUrl, json=self.loginPayload, proxies=self.proxy, verify=False)
+        result = json.loads(r.text)
+        r.close()
+        self.assertEqual('1', result['totalCount'])
+
+    def test_can_get_metrics_with_cookie(self):
+        r = requests.post(self.apicLoginUrl, json=self.loginPayload, proxies=self.proxy, verify=False)
+        result = json.loads(r.text)
+        apicCookie = result['imdata'][0]['aaaLogin']['attributes']['token']
+        r.close()
+        cookie = {"APIC-cookie": apicCookie}
+        r = requests.get(self.apicMetricsUrl, cookies=cookie, proxies=self.proxy, verify=False)
+        result = json.loads(r.text)
+        self.assertEqual('2', result['totalCount'])
 
 
-    def connect_to_vcenter(self):
-        testVCConfig = self.vcenterConfig['vcenter_information']
-        testSi = vc_utils.connect_to_vcenter(testVCConfig['vcenter_hostname'],
-                                            testVCConfig['vcenter_username'],
-                                            testVCConfig['vcenter_password'],
-                                            testVCConfig['vcenter_port'],
-                                            testVCConfig['vcenter_ignore_ssl'],)
-        return testSi
-
-    def test_vcexporterconfig_can_get_config(self):
-        self.assertEqual("vc.test.local", self.vcenterConfig['vcenter_information']['vcenter_hostname'])
-
-    def test_vcexporter_can_get_config(self):  
-        self.assertEqual("vc.test.local", self.vcenterConfig['vcenter_information']['vcenter_hostname'])
-
-    def test_can_log_into_vcenter(self):
-        testSi = self.connect_to_vcenter()
-        self.assertIn('sessionManager', dir(testSi.RetrieveServiceContent()))
-        vc_utils.disconnect_from_vcenter(testSi)
-        
-    def tearDown(self):
-        sys.modules.clear()
 
 
 if __name__ == "__main__":
