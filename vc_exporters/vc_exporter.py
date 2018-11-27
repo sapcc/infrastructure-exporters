@@ -1,5 +1,4 @@
 import exporter
-from abc import ABC, abstractmethod
 from vc_exporters import vc_utils
 from prometheus_client import start_http_server
 

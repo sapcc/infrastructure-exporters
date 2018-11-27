@@ -30,6 +30,7 @@ class Exporter(ABC):
             loop_start_time = int(time.time())
 
             self.collect()
+            self.export()
 
             loop_end_time = int(time.time())
             logging.info('number of ' + self.exporterType + ' we got metrics for ' +

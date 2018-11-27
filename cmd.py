@@ -1,10 +1,12 @@
 import time
 import argparse
 from vc_exporters.vc_exporter_types import vcapiandversions, vccustomervmmetrics
+from apic_exporters.apic_exporter_types import apichealth
 
 EXPORTERS = {
     'vcapiandversions': vcapiandversions.Vcapiandversions,
     'vccustomervmmetrics': vccustomervmmetrics.Vccustomervmmetrics,
+    'apichealth': apichealth.Apichealth
 }
 
 class ExporterFactory(object):

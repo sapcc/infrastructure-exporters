@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File (Integrated Terminal)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": ["-c", "/Users/i814196/testing/apicconfig.yaml",
+                     "-t", "apichealth"],
+            "console": "integratedTerminal"
+        },
+    ]
+}

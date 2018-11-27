@@ -1,21 +1,16 @@
 import exporter
-import requests
-from apic_exporters.apic_utils import getApicCookie, apicGetRequest
+from apic_exporters.apic_utils import getApicCookie
+from prometheus_client import start_http_server
 
-class Apichealth(exporter.Exporter):
+class Apicexporter(exporter.Exporter):
 
     def __init__(self, exporterType, exporterConfig):
         super().__init__(exporterType, exporterConfig)
         self.apicInfo = self.exporterConfig['device_information']
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
+        self.duration = self.exporterInfo['collection_interval']
         self.loginCookie = getApicCookie(self.apicInfo['hostname'],
                                                     self.apicInfo['username'],
                                                     self.apicInfo['password'],
                                                     self.apicInfo['proxy'])
-
-    def collect(self):
-        self.apicHealthUrl =  "https://" + self.apicInfo['hostname'] + "/api/node/class/procEntity.json?"
-        self.apicHealthInfo = apicGetRequest(self.apicHealthUrl, self.loginCookie, self.apicInfo['proxy'])
-
-    def export(self):
-        pass
+        start_http_server(self.exporterInfo['prometheus_port'])
