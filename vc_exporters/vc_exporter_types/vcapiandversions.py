@@ -1,14 +1,14 @@
 import logging
 import exporter
 from vc_exporters.vc_utils import collect_properties
+from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
 from pyVmomi import vim, vmodl
 
-class Apiandversions(exporter.Exporter):
+class Vcapiandversions(VCExporter):
     
-    def __init__(self, si, vcconfig, exporterconfig):
-        self.vcconfig = vcconfig
-        self.si = si
+    def __init__(self, exporterType, exporterConfig):
+        super().__init__(exporterType, exporterConfig)
         self.gauge = {}
         self.sessions_dict = {}
         self.host_properties =[
@@ -43,9 +43,10 @@ class Apiandversions(exporter.Exporter):
             type=[vim.HostSystem],
             recursive=True
         )
+        
     
     def collect(self):
-        region = self.vcconfig['vcenter_hostname'].split('.')[2]
+        region = self.vcenterInfo['hostname'].split('.')[2]
         self.metric_count = 0
         logging.debug('get clusters from content')
 
@@ -55,9 +56,9 @@ class Apiandversions(exporter.Exporter):
         for x in old_metric_list:
             self.gauge['vcenter_vcenter_node_info']._metrics.pop(x)
 
-        logging.debug(self.vcconfig['vcenter_hostname'] +
+        logging.debug(self.vcenterInfo['hostname'] +
                       ": " + self.content.about.version)
-        self.gauge['vcenter_vcenter_node_info'].labels(self.vcconfig['vcenter_hostname'],
+        self.gauge['vcenter_vcenter_node_info'].labels(self.vcenterInfo['hostname'],
                                                        self.content.about.version,
                                                        self.content.about.build, region).set(1)
         self.metric_count += 1
@@ -120,7 +121,7 @@ class Apiandversions(exporter.Exporter):
             try:
                 remove_data = self.sessions_dict.pop(key)
                 self.gauge['vcenter_vcenter_api_session_info'].remove(key[0:8], 
-                    self.vcconfig['vcenter_hostname'],
+                    self.vcenterInfo['hostname'],
                     remove_data['userName'], 
                     remove_data['ipAddress'],
                     remove_data['userAgent']
@@ -131,11 +132,11 @@ class Apiandversions(exporter.Exporter):
     def export(self):
         for session in self.sessions_dict:
             self.gauge['vcenter_vcenter_api_session_info'].labels(session[0:8],
-                        self.vcconfig['vcenter_hostname'], 
+                        self.vcenterInfo['hostname'], 
                         self.sessions_dict[session]['userName'], 
                         self.sessions_dict[session]['ipAddress'],
                         self.sessions_dict[session]['userAgent']).set(self.sessions_dict[session]['callsPerInterval'])
 
-        self.gauge['vcenter_vcenter_api_active_count'].labels(self.vcconfig['vcenter_hostname']).set(
+        self.gauge['vcenter_vcenter_api_active_count'].labels(self.vcenterInfo['hostname']).set(
             len(self.current_sessions)
         )  

@@ -1,5 +1,13 @@
-apic_information:
-    apic_host: localhost
-    apic_user: admin2
-    apic_password: password
-    apic_tenant_name: sometenant
+device_information:
+    hostname: localhost
+    username: admin2
+    password: password
+    tenant_name: sometenant
+    proxy: 
+        http: ''
+        https: ''
+        no: '*'
+exporter_types:
+    apichealth:
+        collection_interval: 120
+        prometheus_port: 9102

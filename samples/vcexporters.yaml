@@ -1,8 +1,14 @@
-vcenter_exporters:
-  apiandversions:
+device_information:
+  hostname: vc.test.local
+  username: administrator@vsphere.local
+  password: password
+  port: 443
+  ignore_ssl: true
+exporter_types:
+  vcapiandversions:
     collection_interval: 120
     prometheus_port: 9102
-  customervmmetrics:
+  vccustomervmmetrics:
     collection_interval: 120
     prometheus_port: 9102
     shorter_names_regex: '\.some\.domain\.name'

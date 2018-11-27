@@ -1,16 +1,15 @@
 import logging
 import exporter
 from vc_exporters.vc_utils import collect_properties
+from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
 from datetime import datetime, timedelta
 from pyVmomi import vim, vmodl
 
-class Customervmmetrics(exporter.Exporter):
+class Vccustomervmmetrics(VCExporter):
     
-    def __init__(self, si, vcconfig, exporterconfig):
-        self.vcconfig = vcconfig
-        self.exporterconfig = exporterconfig
-        self.si = si
+    def __init__(self, exporterType, exporterConfig):
+        super.__init__(exporterType, exporterConfig)
         self.gauge = {}
         self.sessions_dict = {}
         self.counter_info = {}
@@ -69,6 +68,7 @@ class Customervmmetrics(exporter.Exporter):
             type=[vim.VirtualMachine],
             recursive=True
         )
+        
 
     def export(self):
         # get data
