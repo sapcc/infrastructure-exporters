@@ -9,7 +9,7 @@ from pyVmomi import vim, vmodl
 class Vccustomervmmetrics(VCExporter):
     
     def __init__(self, exporterType, exporterConfig):
-        super.__init__(exporterType, exporterConfig)
+        super().__init__(exporterType, exporterConfig)
         self.gauge = {}
         self.sessions_dict = {}
         self.counter_info = {}
@@ -42,7 +42,7 @@ class Vccustomervmmetrics(VCExporter):
 
         ######## WHERE DO WE GET THE CONFIG FOR THE VMMETRICS FROM?
 
-        selected_metrics = self.exporterconfig['vcenter_exporters']['customervmmetrics']['vm_metrics']
+        selected_metrics = self.exporterInfo['vm_metrics']
 
         # Populate counter_ids_to_collect from config if specified
         if selected_metrics:
@@ -80,7 +80,7 @@ class Vccustomervmmetrics(VCExporter):
         #  should be averaged across all based on vcenter time
         vch_time = self.si.CurrentTime()
         start_time = vch_time - \
-            timedelta(seconds=(self.exporterconfig['vcenter_exporters']['customervmmetrics']['collection_interval'] + 60))
+            timedelta(seconds=(self.exporterInfo['collection_interval'] + 60))
         end_time = vch_time - timedelta(seconds=60)
         perf_manager = self.si.content.perfManager
 

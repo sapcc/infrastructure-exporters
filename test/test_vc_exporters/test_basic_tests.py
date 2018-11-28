@@ -1,10 +1,8 @@
 import unittest
 import os
-import urllib
-import sys
 import exporter
 from vc_exporters import vc_utils, vc_exporter
-from vc_exporters.vc_exporter_types import api_and_versions
+from vc_exporters.vc_exporter_types import vcapiandversions
 
 class TestExporter(unittest.TestCase):
 
@@ -16,27 +14,22 @@ class TestExporter(unittest.TestCase):
 
 
     def connect_to_vcenter(self):
-        testVCConfig = self.vcenterConfig['vcenter_information']
-        testSi = vc_utils.connect_to_vcenter(testVCConfig['vcenter_hostname'],
-                                            testVCConfig['vcenter_username'],
-                                            testVCConfig['vcenter_password'],
-                                            testVCConfig['vcenter_port'],
-                                            testVCConfig['vcenter_ignore_ssl'],)
+        testVCConfig = self.vcenterConfig['device_information']
+        testSi = vc_utils.connect_to_vcenter(testVCConfig['hostname'],
+                                            testVCConfig['username'],
+                                            testVCConfig['password'],
+                                            testVCConfig['port'],
+                                            testVCConfig['ignore_ssl'],)
         return testSi
 
-    def test_vcexporterconfig_can_get_config(self):
-        self.assertEqual("vc.test.local", self.vcenterConfig['vcenter_information']['vcenter_hostname'])
-
     def test_vcexporter_can_get_config(self):  
-        self.assertEqual("vc.test.local", self.vcenterConfig['vcenter_information']['vcenter_hostname'])
+        self.assertEqual("vc.test.local", self.vcenterConfig['device_information']['hostname'])
 
     def test_can_log_into_vcenter(self):
         testSi = self.connect_to_vcenter()
         self.assertIn('sessionManager', dir(testSi.RetrieveServiceContent()))
         vc_utils.disconnect_from_vcenter(testSi)
         
-    def tearDown(self):
-        sys.modules.clear()
 
 
 if __name__ == "__main__":

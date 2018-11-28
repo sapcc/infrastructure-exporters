@@ -9,8 +9,7 @@ class TestExporter(unittest.TestCase):
 
     def setUp(self):
         # Get credentials from file or use defaults
-        # apicConfigFile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/apicconfig.yaml"
-        apicConfigFile = "/Users/i814196/testing/apicconfig.yaml"
+        apicConfigFile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/apicconfig.yaml"
         self.apicConfigs = exporter.Exporter.get_config(apicConfigFile)['device_information']
         self.proxy = {'http': '', 'https': '', 'no': '*'}
         self.apicLoginUrl = "https://" + self.apicConfigs['hostname'] + "/api/aaaLogin.json?"
