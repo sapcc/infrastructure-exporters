@@ -6,8 +6,8 @@ name = "pypi"
 [packages]
 yamlconfig = "*"
 pyvmomi = "*"
+prometheus_client = "*"
 pyvim = "*"
-prometheus-client = "*"
 
 [dev-packages]
 

@@ -12,7 +12,6 @@ class TestExporter(unittest.TestCase):
         self.vcenterConfig = exporter.Exporter.get_config(self.testVCConfigfile)
         self.testExporterConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcexporters.yaml"
 
-
     def connect_to_vcenter(self):
         testVCConfig = self.vcenterConfig['device_information']
         testSi = vc_utils.connect_to_vcenter(testVCConfig['hostname'],
@@ -30,7 +29,5 @@ class TestExporter(unittest.TestCase):
         self.assertIn('sessionManager', dir(testSi.RetrieveServiceContent()))
         vc_utils.disconnect_from_vcenter(testSi)
         
-
-
 if __name__ == "__main__":
     unittest.main()

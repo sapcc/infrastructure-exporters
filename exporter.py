@@ -1,4 +1,5 @@
 import os
+import sys
 from abc import ABC, abstractmethod
 from yamlconfig import YamlConfig
 import logging
@@ -13,6 +14,13 @@ class Exporter(ABC):
         self.exporterConfig = self.get_config(exporterConfig)
         self.exporterType = exporterType
         self.metric_count = 0
+        self.logger = logging.getLogger()
+        if self.exporterConfig['device_information']['log_level']:
+            self.logger.setLevel(self.exporterConfig['device_information']['log_level'])
+        else:
+            self.logger.setLevel("INFO")
+        format = '[%(asctime)s] [%(levelname)s] %(message)s'
+        logging.basicConfig(stream=sys.stdout, format=format)    
 
     @abstractmethod
     def collect(self):

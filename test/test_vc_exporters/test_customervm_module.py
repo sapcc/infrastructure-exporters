@@ -11,14 +11,12 @@ class TestVcexporters(unittest.TestCase):
 
 
     def setUp(self):
-
         self.testVCVersion = '6.5.0'
         self.testVCBuild = '7515524'
         self.testVCregion = 'local'
 
         self.testVCConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcconfig.yaml"
         self.testExporter = vccustomervmmetrics.Vccustomervmmetrics('vccustomervmmetrics', self.testVCConfigfile)
-
 
     def test_run_customervm_module_from_vcexporter(self):
          self.testExporter.collect()
@@ -32,9 +30,6 @@ class TestVcexporters(unittest.TestCase):
          for collector in collectors_to_unregister:
              if 'vcenter' in collector:
                  REGISTRY.unregister(REGISTRY._names_to_collectors[collector])
-
-    def tearDown(self):
-         sys.modules.clear()
 
 if __name__ == "__main__":
     unittest.main()

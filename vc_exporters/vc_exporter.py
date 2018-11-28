@@ -1,5 +1,6 @@
 import exporter
 import socket
+import logging
 from vc_exporters import vc_utils
 from prometheus_client import start_http_server
 
@@ -19,7 +20,8 @@ class VCExporter(exporter.Exporter):
                                              self.vcenterInfo['port'],
                                              self.vcenterInfo['ignore_ssl'],)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(('localhost', self.exporterInfo['prometheus_port'])) == 0:
-                start_http_server(self.exporterInfo['prometheus_port'])
+            if s.connect_ex(('localhost', int(self.exporterInfo['prometheus_port']))) != 0:
+                start_http_server(int(self.exporterInfo['prometheus_port']))
+                
       
     

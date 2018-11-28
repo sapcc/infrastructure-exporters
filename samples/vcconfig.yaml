@@ -4,6 +4,7 @@ device_information:
   password: password
   port: 443
   ignore_ssl: true
+  log_level: INFO
 exporter_types:
   vcapiandversions:
     collection_interval: 120

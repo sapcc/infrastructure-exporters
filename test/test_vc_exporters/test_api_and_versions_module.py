@@ -16,9 +16,7 @@ class TestVcexporters(unittest.TestCase):
         self.testVCregion = 'local'
 
         self.testVCConfigfile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/vcconfig.yaml"
-        self.testExporter = vcapiandversions.Vcapiandversions('vcapiandversions', self.testVCConfigfile)
-
-
+        self.testExporter = vccustomervmmetrics.Vccustomervmmetrics('vccustomervmmetrics', self.testVCConfigfile)
 
     def test_run_api_and_versions_module_from_vcexporter(self):
         self.testExporter.collect()
@@ -33,8 +31,6 @@ class TestVcexporters(unittest.TestCase):
         for collector in collectors_to_unregister:
             if 'vcenter' in collector:
                 REGISTRY.unregister(REGISTRY._names_to_collectors[collector])
-
-
 
 if __name__ == "__main__":
     unittest.main()

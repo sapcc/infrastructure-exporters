@@ -1,5 +1,6 @@
 import logging
 import exporter
+import re
 from vc_exporters.vc_utils import collect_properties
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
@@ -19,7 +20,19 @@ class Vccustomervmmetrics(VCExporter):
             "config.instanceUuid", "config.guestId", "summary.config.vmPathName"
         ]
 
-    
+        # compile a regex for trying to filter out openstack generated vms
+        # they all have the "name:" field set
+        self.regexs['openstack_match_regex'] = re.compile("^name")
+
+        # Compile other regexs
+        for regular_expression in ['shorter_names_regex', 'host_match_regex', 'ignore_match_regex']:
+            if self.exporterInfo.get(regular_expression):
+                self.regexs[regular_expression] = re.compile(
+                    self.exporterInfo[regular_expression]
+                )
+            else:
+                self.regexs[regular_expression] = re.compile('')
+
     def collect(self):
         content = self.si.RetrieveContent()
         self.container = content.rootFolder
@@ -37,10 +50,6 @@ class Vccustomervmmetrics(VCExporter):
                                   vm_counter_id.rollupType])
             logging.debug(full_name + ": %s", str(vm_counter_id.key))
             self.counter_info[full_name] = vm_counter_id.key
-
-
-
-        ######## WHERE DO WE GET THE CONFIG FOR THE VMMETRICS FROM?
 
         selected_metrics = self.exporterInfo['vm_metrics']
 
@@ -69,7 +78,6 @@ class Vccustomervmmetrics(VCExporter):
             recursive=True
         )
         
-
     def export(self):
         # get data
         data = collect_properties(self.si, self.view_ref, vim.VirtualMachine,

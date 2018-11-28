@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/Users/i814196/.local/share/virtualenvs/vcenter-exporter-2-5cbiCQoj/bin",
+    "python.pythonPath": "/Users/i814196/.local/share/virtualenvs/exporters-mhtZjGYo/bin",
     "python.unitTest.unittestArgs": [
         "-v",
         "-s",

@@ -44,7 +44,6 @@ class Vcapiandversions(VCExporter):
             recursive=True
         )
         
-    
     def collect(self):
         region = self.vcenterInfo['hostname'].split('.')[2]
         self.metric_count = 0

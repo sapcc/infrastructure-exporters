@@ -15,5 +15,5 @@ class Apicexporter(exporter.Exporter):
                                                     self.apicInfo['password'],
                                                     self.apicInfo['proxy'])
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(('localhost', self.exporterInfo['prometheus_port'])) == 0:
-                start_http_server(self.exporterInfo['prometheus_port'])
+            if s.connect_ex(('localhost', int(self.exporterInfo['prometheus_port']))) != 0:
+                start_http_server(int(self.exporterInfo['prometheus_port']))

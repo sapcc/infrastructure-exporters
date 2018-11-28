@@ -12,8 +12,6 @@ class TestApicHealthExporter(unittest.TestCase):
         # Get credentials from file or use defaults
         apicConfigFile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/apicconfig.yaml"
 
-        
-
     def test_can_get_cookie_with_apic_health_exporter(self):
         testExporter = apichealth.Apichealth('apichealth', self.apicConfigfile)
         self.assertGreater(len(testExporter.loginCookie), 40)
