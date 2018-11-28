@@ -1,4 +1,5 @@
 import exporter
+import socket
 from apic_exporters.apic_utils import getApicCookie
 from prometheus_client import start_http_server
 
@@ -13,4 +14,6 @@ class Apicexporter(exporter.Exporter):
                                                     self.apicInfo['username'],
                                                     self.apicInfo['password'],
                                                     self.apicInfo['proxy'])
-        start_http_server(self.exporterInfo['prometheus_port'])
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(('localhost', self.exporterInfo['prometheus_port'])) == 0:
+                start_http_server(self.exporterInfo['prometheus_port'])

@@ -11,16 +11,13 @@ class Apichealth(Apicexporter):
         self.gauge = {}
         self.gauge['network_apic_cpu_percentage'] = Gauge('network_apic_cpu_percentage',
                                                           'network_apic_cpu_percentage',
-                                                          ['hostname',
-                                                          'cpuPct'])
+                                                          ['hostname'])
         self.gauge['network_apic_maxMemAlloc'] = Gauge('network_apic_maxMemAlloc',
                                                           'network_apic_maxMemAlloc',
-                                                          ['hostname',
-                                                          'maxMemAlloc'])
+                                                          ['hostname'])
         self.gauge['network_apic_memFree'] = Gauge('network_apic_memFree',
                                                           'network_apic_memFree',
-                                                          ['hostname',
-                                                          'memFree'])                                                 
+                                                          ['hostname'])                                                 
                                     
 
 

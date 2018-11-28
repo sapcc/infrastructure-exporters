@@ -2,6 +2,7 @@ import unittest
 import os
 import sys
 from vc_exporters import vc_exporter, vc_utils
+from prometheus_client.core import REGISTRY
 
 
 class TestExporterProgram(unittest.TestCase):
@@ -23,6 +24,12 @@ class TestExporterProgram(unittest.TestCase):
                        self.testVCVersion, self.testVCBuild, self.testVCregion),
                        runningExporter.vcExporter.gauge['vcenter_vcenter_node_info']._metrics)
         vc_utils.disconnect_from_vcenter(runningExporter.si)
+
+        # Clear out the prometheus REGISTRY
+        collectors_to_unregister = [x for x in REGISTRY._names_to_collectors]
+        for collector in collectors_to_unregister:
+            if 'vcenter' in collector:
+                REGISTRY.unregister(REGISTRY._names_to_collectors[collector])
 
     def tearDown(self):
         sys.modules.clear()
