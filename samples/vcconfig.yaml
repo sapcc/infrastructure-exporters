@@ -7,9 +7,11 @@ device_information:
   log_level: INFO
 exporter_types:
   vcapiandversions:
+    enabled: True
     collection_interval: 120
     prometheus_port: 9102
   vccustomervmmetrics:
+    enabled: False
     collection_interval: 120
     prometheus_port: 9102
     shorter_names_regex: '\.some\.domain\.name'
@@ -40,5 +42,6 @@ exporter_types:
     - 'virtualDisk.totalReadLatency.average'
     - 'virtualDisk.totalWriteLatency.average'
   customerdsmetrics:
+    enabled: False
     collection_interval: 120
     prometheus_port: 9102

@@ -8,6 +8,7 @@ yamlconfig = "*"
 pyvmomi = "*"
 prometheus_client = "*"
 pyvim = "*"
+asyncio = "*"
 
 [dev-packages]
 
