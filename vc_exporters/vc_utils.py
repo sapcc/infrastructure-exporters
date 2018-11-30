@@ -1,7 +1,7 @@
 import ssl
 import os
 from pyVmomi import vim, vmodl
-from pyvim.connect import SmartConnect, Disconnect
+from pyVim.connect import SmartConnect, Disconnect
 
 
 
