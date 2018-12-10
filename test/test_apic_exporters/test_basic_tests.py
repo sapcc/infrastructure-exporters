@@ -1,6 +1,7 @@
 import unittest
 import requests
 import json
+import os
 import exporter
 
 class TestExporter(unittest.TestCase):
