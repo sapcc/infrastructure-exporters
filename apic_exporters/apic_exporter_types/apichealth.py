@@ -1,7 +1,6 @@
 import exporter
 import requests
 from apic_exporters.apic_exporter import Apicexporter
-from apic_exporters.apic_utils import apicGetRequest
 from prometheus_client import Gauge
 
 class Apichealth(Apicexporter):
@@ -21,7 +20,7 @@ class Apichealth(Apicexporter):
                                     
     def collect(self):
         self.apicHealthUrl =  "https://" + self.apicInfo['hostname'] + "/api/node/class/procEntity.json?"
-        self.apicHealthInfo = apicGetRequest(self.apicHealthUrl, self.loginCookie, self.apicInfo['proxy'])
+        self.apicHealthInfo = self.apicGetRequest(self.apicHealthUrl, self.loginCookie, self.apicInfo['proxy'])
         self.apicMetrics = self.apicHealthInfo['imdata'][0]['procEntity']['attributes']
 
     def export(self):

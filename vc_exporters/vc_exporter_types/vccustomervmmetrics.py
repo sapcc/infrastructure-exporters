@@ -1,7 +1,6 @@
 import logging
 import exporter
 import re
-from vc_exporters.vc_utils import collect_properties
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
 from datetime import datetime, timedelta
@@ -80,7 +79,7 @@ class Vccustomervmmetrics(VCExporter):
         
     def export(self):
         # get data
-        data = collect_properties(self.si, self.view_ref, vim.VirtualMachine,
+        data = self.collect_properties(self.si, self.view_ref, vim.VirtualMachine,
                                   self.vm_properties, True)
         self.metric_count = 0
 

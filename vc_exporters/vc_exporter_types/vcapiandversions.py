@@ -1,6 +1,5 @@
 import logging
 import exporter
-from vc_exporters.vc_utils import collect_properties
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
 from pyVmomi import vim, vmodl
@@ -70,7 +69,7 @@ class Vcapiandversions(VCExporter):
 
         logging.debug('get version information for each esx host')
 
-        host_data = collect_properties(self.si, self.hosts,
+        host_data = self.collect_properties(self.si, self.hosts,
                                     vim.HostSystem, self.host_properties, True)
         for host in host_data:
             try:

@@ -3,7 +3,7 @@ import os
 import urllib
 import sys
 import exporter
-from vc_exporters import vc_utils, vc_exporter
+from vc_exporters import vc_exporter
 from vc_exporters.vc_exporter_types import vccustomervmmetrics
 from prometheus_client.core import REGISTRY
 
@@ -23,7 +23,7 @@ class TestVcexporters(unittest.TestCase):
          self.testExporter.export()
          # Can't run test with no hosts or VMs, so if program doesn't crash, we are good
          self.assertEqual(1, 1)
-         vc_utils.disconnect_from_vcenter(self.testExporter.si)
+         self.testExporter.disconnect_from_vcenter(self.testExporter.si)
 
          # Clear out the prometheus REGISTRY
          collectors_to_unregister = [x for x in REGISTRY._names_to_collectors]

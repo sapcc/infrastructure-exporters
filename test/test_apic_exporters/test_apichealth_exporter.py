@@ -10,10 +10,10 @@ class TestApicHealthExporter(unittest.TestCase):
 
     def setUp(self):
         # Get credentials from file or use defaults
-        apicConfigFile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/apicconfig.yaml"
+        self.apicConfigFile = os.path.dirname(os.path.realpath(__file__)) + "/../../samples/apicconfig.yaml"
 
     def test_can_get_cookie_with_apic_health_exporter(self):
-        testExporter = apichealth.Apichealth('apichealth', self.apicConfigfile)
+        testExporter = apichealth.Apichealth('apichealth', self.apicConfigFile)
         self.assertGreater(len(testExporter.loginCookie), 40)
         
         # Clear out the prometheus REGISTRY
@@ -23,7 +23,7 @@ class TestApicHealthExporter(unittest.TestCase):
                 REGISTRY.unregister(REGISTRY._names_to_collectors[collector])
 
     def test_can_get_metrics_with_apic_health_exporter(self):
-        testExporter = apichealth.Apichealth('apichealth', self.apicConfigfile)
+        testExporter = apichealth.Apichealth('apichealth', self.apicConfigFile)
         testExporter.collect()
         self.assertIn('cpuPct', testExporter.apicMetrics)
         

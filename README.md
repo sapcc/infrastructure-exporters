@@ -33,7 +33,7 @@ Running the exporter container
 4. run the container as single exporter
    1. ```docker run -p <portsToExpose>:<localPortsToListen> my-exporters "pipenv run python cmd.py -f $(pwd)/samples/<configfile> -t <exporterType>```
 5. run the container as multiple exporters
-   2.    ```docker run -p <portsToExpose>:<localPortsToListen> my-exporters "pipenv run python cmd.py -c <pathToConfigfile.yaml,pathToOtherconfigfile.yaml>```
+   1.    ```docker run -p <portsToExpose>:<localPortsToListen> my-exporters "pipenv run python cmd.py -c <pathToConfigfile.yaml,pathToOtherconfigfile.yaml>```
   
 Exporter files, classes and conventions
 ------------
