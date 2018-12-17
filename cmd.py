@@ -3,15 +3,18 @@ import argparse
 import os
 import exporter
 import asyncio
+import logging
+from datetime import timedelta, datetime
 from concurrent.futures import FIRST_COMPLETED
 from yamlconfig import YamlConfig
-from vc_exporters.vc_exporter_types import vcapiandversions, vccustomervmmetrics
+from vc_exporters.vc_exporter_types import vcapiandversions, vccustomervmmetrics, vccustomerdsmetrics
 from apic_exporters.apic_exporter_types import apichealth
 
 
 EXPORTERS = {
     'vcapiandversions': vcapiandversions.Vcapiandversions,
     'vccustomervmmetrics': vccustomervmmetrics.Vccustomervmmetrics,
+    'vccustomerdsmetrics': vccustomerdsmetrics.Vccustomerdsmetrics,
     'apichealth': apichealth.Apichealth
 }
 
@@ -23,6 +26,53 @@ class ExporterFactory(object):
         except Exception as ex:
             print(str(ex))
             return None
+
+#@asyncio.coroutine
+async def run_loop(exporterInstance, duration):
+        # Start infinite loop to get metrics
+    logging.info('Starting run_loop: ' + exporterInstance.exporterType)
+    while True:
+        logging.debug('====> total loop start: %s' % datetime.now())
+        # get the start time of the loop to be able to fill it to intervall exactly at the end
+        
+        collect_start_time = int(time.time())
+        exporterInstance.collect()
+        collect_end_time = int(time.time())
+
+        await asyncio.sleep(0.5)
+
+        export_start_time = int(time.time())
+        exporterInstance.export()
+        export_end_time = int(time.time())
+
+
+        total_loop_time = ((collect_end_time - collect_start_time) + (export_end_time - export_start_time))
+        #loop_end_time = int(time.time())
+        logging.info('number of ' + exporterInstance.exporterType + ' we got metrics for ' +
+                    str(exporterInstance.metric_count) + " " +exporterInstance.exporterType +
+                    '\'s - actual runtime: ' + str(total_loop_time) + 's')
+                    #'\'s - actual runtime: ' + str(loop_end_time - loop_start_time) + 's')
+                        
+        # this is the time we sleep to fill the loop runtime until it reaches "interval"
+        # the 0.9 makes sure we have some overlap to the last interval to avoid gaps in
+        # metrics coverage (i.e. we get the metrics quicker than the averaging time)
+        loop_sleep_time = 0.9 * \
+            exporterInstance.exporterConfig['exporter_types'][exporterInstance.exporterType]['collection_interval'] - \
+            (collect_end_time - collect_start_time) + (export_end_time - export_end_time)
+            #(loop_end_time - loop_start_time)
+            
+        if loop_sleep_time < 0:
+            logging.warn('getting the metrics takes around ' + str(
+                exporterInstance.exporterConfig['exporter_types'][exporterInstance.exporterType]['collection_interval']) + ' seconds or longer - please increase the interval setting')
+            loop_sleep_time = 0
+
+        logging.debug('====> loop end before sleep: %s' % datetime.now())
+        time.sleep(int(loop_sleep_time))
+        logging.debug('====> total loop end: %s' % datetime.now())
+
+        logging.info('Ending run_loop: ' + exporterInstance.exporterType)
+
+        await asyncio.sleep(0.5)
 
 if __name__ == "__main__":
 
@@ -60,32 +110,20 @@ if __name__ == "__main__":
     else:
         parser.print_help()
 
+    logging = logging.getLogger()
+
     # Create an asynchronous exporter for each exporter in the exporterConfigMapping
     run_loops = []
     for exportertype in exporterConfigMapping:
         currentExporter = ExporterFactory.create_exporter(exportertype, exporterType=exportertype, exporterConfig=exporterConfigMapping[exportertype])
         if currentExporter != None:
-            run_loops.append((currentExporter.run_loop, currentExporter.duration))
+            run_loops.append((run_loop, currentExporter, currentExporter.duration))
         else:
             print("Couldn't add exporter "  + exportertype)
 
     task_map = {}
     for task in run_loops:
-        task_map[task] = asyncio.async(task[0](task[1]))
+        task_map[task] = asyncio.async(task[0](task[1], task[2]))
     loop = asyncio.get_event_loop()
     loop.run_forever()
-
-
-    # if not args.exporterconfig.startswith("/"):
-    #     print("Please specify full path to config file")
-    #     exit(0)
-
-    # # create specified exporter type and run_loop
-    # try:
-    #     runningExporter = ExporterFactory.create_exporter(args.exportertype, exporterType=args.exportertype, exporterConfig=args.exporterconfig)
-    # except Exception as ex:
-    #     print(str(ex))
-    # if runningExporter != None:
-    #     runningExporter.run_loop(runningExporter.duration)
-    # else:
-    #     print("Couldn't create exporter type: " + args.exportertype)
+    

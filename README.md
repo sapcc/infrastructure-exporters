@@ -8,7 +8,8 @@ Currently Available Exporters
 -----------
 * apichealth - Returns health metrics for apic host devices
 * vcapiandversions - Returns versions for vSphere components
-* vccustomervmmetrics - Returns metrics for vms running in vCenter
+* vccustomervmmetrics - Returns metrics for customer vms running in vCenter
+* vccustomerdsmetrics - Returns metrics for customer datstores in vCenter
 
 
 Running an Exporter from cloned repo

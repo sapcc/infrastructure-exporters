@@ -10,13 +10,18 @@ exporter_types:
     enabled: True
     collection_interval: 120
     prometheus_port: 9102
+  vccustomerdsmetrics:
+    enabled: True
+    collection_interval: 120
+    prometheus_port: 9102
+    ignore_ds_match_regex: '(^.*Management.*$|.*local$)'
   vccustomervmmetrics:
-    enabled: False
+    enabled: True
     collection_interval: 120
     prometheus_port: 9102
     shorter_names_regex: '\.some\.domain\.name'
     host_match_regex: '.*buildingblock-xy.*'
-    ignore_match_regex: '^testvmware.*'
+    ignore_vm_match_regex: '^testvmware.*'
     vm_metrics:
     - 'cpu.latency.average'
     - 'cpu.usage.average'

@@ -6,6 +6,9 @@ from prometheus_client import Gauge
 from datetime import datetime, timedelta
 from pyVmomi import vim, vmodl
 
+
+import cProfile
+
 class Vccustomervmmetrics(VCExporter):
     
     def __init__(self, exporterType, exporterConfig):
@@ -14,6 +17,8 @@ class Vccustomervmmetrics(VCExporter):
         self.sessions_dict = {}
         self.counter_info = {}
         self.regexs = {}
+        self.counter_ids_to_collect = []
+        self.metric_count = 0
         self.vm_properties = [
             "runtime.powerState", "runtime.host", "config.annotation", "config.name",
             "config.instanceUuid", "config.guestId", "summary.config.vmPathName"
@@ -24,7 +29,7 @@ class Vccustomervmmetrics(VCExporter):
         self.regexs['openstack_match_regex'] = re.compile("^name")
 
         # Compile other regexs
-        for regular_expression in ['shorter_names_regex', 'host_match_regex', 'ignore_match_regex']:
+        for regular_expression in ['shorter_names_regex', 'host_match_regex', 'ignore_vm_match_regex']:
             if self.exporterInfo.get(regular_expression):
                 self.regexs[regular_expression] = re.compile(
                     self.exporterInfo[regular_expression]
@@ -32,7 +37,6 @@ class Vccustomervmmetrics(VCExporter):
             else:
                 self.regexs[regular_expression] = re.compile('')
 
-    def collect(self):
         content = self.si.RetrieveContent()
         self.container = content.rootFolder
         datacenter = self.container.childEntity[0]
@@ -49,6 +53,17 @@ class Vccustomervmmetrics(VCExporter):
                                   vm_counter_id.rollupType])
             logging.debug(full_name + ": %s", str(vm_counter_id.key))
             self.counter_info[full_name] = vm_counter_id.key
+        
+                # get all the data regarding vcenter hosts
+        self.host_view = content.viewManager.CreateContainerView(
+            self.container, [vim.HostSystem], True)
+
+        # get vm containerview
+        self.view_ref = self.si.content.viewManager.CreateContainerView(
+            container=self.container,
+            type=[vim.VirtualMachine],
+            recursive=True
+        )
 
         selected_metrics = self.exporterInfo['vm_metrics']
 
@@ -66,23 +81,17 @@ class Vccustomervmmetrics(VCExporter):
                 'instance_uuid', 'guest_id', 'datastore', 'metric_detail'
             ])
 
-        # get all the data regarding vcenter hosts
-        self.host_view = content.viewManager.CreateContainerView(
-            self.container, [vim.HostSystem], True)
+        self.counter_info_keys_list = list(self.counter_info.keys())
+        self.counter_info_keys_underscore = [x.replace('.', '_') for x in self.counter_info_keys_list]
+        self.counter_info_values_list = list(self.counter_info.values())
 
-        # get vm containerview
-        self.view_ref = self.si.content.viewManager.CreateContainerView(
-            container=self.container,
-            type=[vim.VirtualMachine],
-            recursive=True
-        )
-        
-    def export(self):
-        # get data
-        data = self.collect_properties(self.si, self.view_ref, vim.VirtualMachine,
+    def collect(self):
+         # get data
+        self.data = self.collect_properties(self.si, self.view_ref, vim.VirtualMachine,
                                   self.vm_properties, True)
         self.metric_count = 0
-
+ 
+    def export(self):
         # define the time range in seconds the metric data from the vcenter
         #  should be averaged across all based on vcenter time
         vch_time = self.si.CurrentTime()
@@ -91,7 +100,7 @@ class Vccustomervmmetrics(VCExporter):
         end_time = vch_time - timedelta(seconds=60)
         perf_manager = self.si.content.perfManager
 
-        for item in data:
+        for item in self.data:
 
             try:
                 if (item["runtime.powerState"] == "poweredOn" and
@@ -149,10 +158,16 @@ class Vccustomervmmetrics(VCExporter):
                     result = perf_manager.QueryStats(querySpec=[spec])
                     logging.debug(
                         '==> perfManager.QueryStats end: %s' % datetime.now())
+                    self.metric_count += 1
+                    logging.info("Collected %d metrics" % self.metric_count)
 
+    
                     # loop over the metrics
                     logging.debug('==> gauge loop start: %s' % datetime.now())
+                    # Create counter list for gauges
+                    
                     for val in result[0].value:
+
                         # send gauges to prometheus exporter: metricname and value with
                         # labels: vm name, project id, vcenter name, vcneter
                         # node, instance uuid and metric detail (for instance a partition
@@ -163,31 +178,37 @@ class Vccustomervmmetrics(VCExporter):
                                 metric_detail = 'total'
                             else:
                                 metric_detail = val.id.instance
+                            
+                            gauge_finder = self.counter_info_values_list.index(val.id.counterId)
+                            gauge_title = self.counter_info_keys_underscore[gauge_finder]
+                            gauge_title = 'vcenter_' + gauge_title
+                            metric_val = val.value[0]
+                            gauge_title = re.sub('\.', '_', gauge_title )
+                            logging.info("Update Guage...")
+                            self.gauge[gauge_title].labels(
+                                        #list(self.counter_info.keys())[list(self.counter_info.values())
+                                        #                            .index(val.id.counterId)]
+                                        #.replace('.', '_')].labels(
+                                            annotations['name'],
+                                            annotations['projectid'], self.datacentername,
+                                            #self.regexs['shorter_names_regex'].sub(
+                                            #    '',
+                                            #    item["runtime.host"].name),
+                                            item["runtime.host"].name,
+                                            item["config.instanceUuid"],
+                                            item["config.guestId"],
+                                            datastore,
+                                            #metric_detail).set(val.value[0])
+                                            metric_detail).set(metric_val)   
+                            logging.info('Gauge Updated.....')
 
-                            self.gauge['vcenter_' +
-                                       list(self.counter_info.keys())[list(self.counter_info.values())
-                                                                 .index(val.id.counterId)]
-                                       .replace('.', '_')].labels(
-                                           annotations['name'],
-                                           annotations['projectid'], self.datacentername,
-                                           self.regexs['name_shortening_regex'].sub(
-                                               '',
-                                               item["runtime.host"].name),
-                                           item["config.instanceUuid"],
-                                           item["config.guestId"],
-                                           datastore,
-                                           metric_detail).set(val.value[0])
                     logging.debug('==> gauge loop end: %s' % datetime.now())
                     logging.debug("collected data for " + item['config.name'])
-
                 else:
                     logging.debug("didn't collect info for " + item['config.name'] +
-                                  " didn't meet requirements")
-                self.metric_count += 1
-
+                                " didn't meet requirements")
             # some vms do not have config.name define - we are not interested in them and can ignore them
             except KeyError as e:
                 logging.debug("property not defined for vm: " + str(e))
-
             except Exception as e:
-                logging.info("couldn't get perf data: " + str(e)) 
+                logging.info("couldn't get perf data: " + str(e))

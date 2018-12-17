@@ -1,0 +1,6 @@
+DEBUG:passlib.utils.compat:loaded lazy attr 'BytesIO': <built-in function StringIO>
+DEBUG:pip._internal.utils.misc:lzma module is not available
+DEBUG:pip._internal.vcs:Registered VCS backend: git
+DEBUG:pip._internal.vcs:Registered VCS backend: hg
+DEBUG:pip._internal.vcs:Registered VCS backend: svn
+DEBUG:pip._internal.vcs:Registered VCS backend: bzr
