@@ -29,6 +29,7 @@ class ExporterFactory(object):
 
 #@asyncio.coroutine
 async def run_loop(exporterInstance, duration):
+#def run_loop(exporterInstance, duration):
         # Start infinite loop to get metrics
     logging.info('Starting run_loop: ' + exporterInstance.exporterType)
     while True:
@@ -36,14 +37,16 @@ async def run_loop(exporterInstance, duration):
         # get the start time of the loop to be able to fill it to intervall exactly at the end
         
         collect_start_time = int(time.time())
+        #asyncio.get_event_loop().create_task(exporterInstance.collect())
         exporterInstance.collect()
         collect_end_time = int(time.time())
 
-        await asyncio.sleep(0.5)
 
         export_start_time = int(time.time())
+        #asyncio.get_event_loop().create_task(exporterInstance.export())
         exporterInstance.export()
         export_end_time = int(time.time())
+
 
 
         total_loop_time = ((collect_end_time - collect_start_time) + (export_end_time - export_start_time))
@@ -67,13 +70,12 @@ async def run_loop(exporterInstance, duration):
             loop_sleep_time = 0
 
         logging.debug('====> loop end before sleep: %s' % datetime.now())
-        time.sleep(int(loop_sleep_time))
+        await asyncio.sleep(int(loop_sleep_time))
         logging.debug('====> total loop end: %s' % datetime.now())
 
         logging.info('Ending run_loop: ' + exporterInstance.exporterType)
-
-        await asyncio.sleep(0.5)
-
+        
+        
 if __name__ == "__main__":
 
     exporterConfigMapping = {}
@@ -124,6 +126,8 @@ if __name__ == "__main__":
     task_map = {}
     for task in run_loops:
         task_map[task] = asyncio.async(task[0](task[1], task[2]))
+        #task_map[task] = task[0](task[1], task[2])
+        #asyncio.get_event_loop().create_task(task_map[task])
     loop = asyncio.get_event_loop()
     loop.run_forever()
     

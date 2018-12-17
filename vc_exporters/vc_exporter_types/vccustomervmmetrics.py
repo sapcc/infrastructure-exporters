@@ -1,13 +1,12 @@
 import logging
 import exporter
 import re
+import asyncio
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
 from datetime import datetime, timedelta
 from pyVmomi import vim, vmodl
 
-
-import cProfile
 
 class Vccustomervmmetrics(VCExporter):
     
@@ -108,9 +107,9 @@ class Vccustomervmmetrics(VCExporter):
                         'production' in item["runtime.host"].parent.name
                         ) and not self.regexs['ignore_vm_match_regex'].match(item["config.name"]):
                     logging.debug('current vm processed - ' +
-                                  item["config.name"])
+                                    item["config.name"])
                     logging.debug('==> running on vcenter node: ' +
-                                  item["runtime.host"].name)
+                                    item["runtime.host"].name)
 
                     # split the multi-line annotation into a dict
                     # per property (name, project-id, ...)
@@ -154,18 +153,18 @@ class Vccustomervmmetrics(VCExporter):
 
                     # get metric stats from vcenter
                     logging.debug('==> perfManager.QueryStats start: %s' %
-                                  datetime.now())
+                                    datetime.now())
                     result = perf_manager.QueryStats(querySpec=[spec])
                     logging.debug(
                         '==> perfManager.QueryStats end: %s' % datetime.now())
                     self.metric_count += 1
-                    logging.info("Collected %d metrics" % self.metric_count)
+                    logging.info("Collected metrics for %d vms" % self.metric_count)
 
-    
+
                     # loop over the metrics
                     logging.debug('==> gauge loop start: %s' % datetime.now())
                     # Create counter list for gauges
-                    
+
                     for val in result[0].value:
 
                         # send gauges to prometheus exporter: metricname and value with
@@ -184,23 +183,23 @@ class Vccustomervmmetrics(VCExporter):
                             gauge_title = 'vcenter_' + gauge_title
                             metric_val = val.value[0]
                             gauge_title = re.sub('\.', '_', gauge_title )
-                            logging.info("Update Guage...")
-                            self.gauge[gauge_title].labels(
-                                        #list(self.counter_info.keys())[list(self.counter_info.values())
-                                        #                            .index(val.id.counterId)]
-                                        #.replace('.', '_')].labels(
-                                            annotations['name'],
-                                            annotations['projectid'], self.datacentername,
-                                            #self.regexs['shorter_names_regex'].sub(
-                                            #    '',
-                                            #    item["runtime.host"].name),
-                                            item["runtime.host"].name,
-                                            item["config.instanceUuid"],
-                                            item["config.guestId"],
-                                            datastore,
-                                            #metric_detail).set(val.value[0])
-                                            metric_detail).set(metric_val)   
-                            logging.info('Gauge Updated.....')
+                            asyncio.get_event_loop().create_task(self.update_gauge(gauge_title, annotations, item, datastore, metric_detail, metric_val))
+                            
+                            # self.gauge[gauge_title].labels(
+                            #             #list(self.counter_info.keys())[list(self.counter_info.values())
+                            #             #                            .index(val.id.counterId)]
+                            #             #.replace('.', '_')].labels(
+                            #                 annotations['name'],
+                            #                 annotations['projectid'], self.datacentername,
+                            #                 #self.regexs['shorter_names_regex'].sub(
+                            #                 #    '',
+                            #                 #    item["runtime.host"].name),
+                            #                 item["runtime.host"].name,
+                            #                 item["config.instanceUuid"],
+                            #                 item["config.guestId"],
+                            #                 datastore,
+                            #                 #metric_detail).set(val.value[0])
+                            #                 metric_detail).set(metric_val)   
 
                     logging.debug('==> gauge loop end: %s' % datetime.now())
                     logging.debug("collected data for " + item['config.name'])
@@ -212,3 +211,13 @@ class Vccustomervmmetrics(VCExporter):
                 logging.debug("property not defined for vm: " + str(e))
             except Exception as e:
                 logging.info("couldn't get perf data: " + str(e))
+
+    async def update_gauge(self, gauge_title, annotations, item, datastore, metric_detail, metric_val):
+        self.gauge[gauge_title].labels(
+                annotations['name'],
+                annotations['projectid'], self.datacentername,
+                item["runtime.host"].name,
+                item["config.instanceUuid"],
+                item["config.guestId"],
+                datastore,
+                metric_detail).set(metric_val)

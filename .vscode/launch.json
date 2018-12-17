@@ -8,7 +8,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/cmd.py",
-            "args": ["-c", "/Users/i814196/testing/vcexporters.yaml"]
+            "args": ["-c", "/Users/i814196/testing/stagingvcexporters.yaml"]
         },
         {
             "name": "Python: Current File (Integrated Terminal)",
