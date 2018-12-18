@@ -46,9 +46,8 @@ class Vcapiandversions(VCExporter):
     def collect(self):
         region = self.vcenterInfo['hostname'].split('.')[2]
         self.metric_count = 0
-        logging.debug('get clusters from content')
-
         logging.debug('removing old vcenter metrics')
+
         # Need list of keys becuase we can't iterate through dict and change size
         old_metric_list = [x for x in self.gauge['vcenter_vcenter_node_info']._metrics.keys()]
         for x in old_metric_list:
@@ -67,7 +66,7 @@ class Vcapiandversions(VCExporter):
         for x in old_metric_list:
             self.gauge['vcenter_esx_node_info']._metrics.pop(x)
 
-        logging.debug('get version information for each esx host')
+        logging.debug('getting version information for each esx host')
 
         host_data = self.collect_properties(self.si, self.hosts,
                                     vim.HostSystem, self.host_properties, True)

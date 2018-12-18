@@ -1,6 +1,5 @@
 import exporter
 import socket
-import logging
 import ssl
 import os
 from pyVmomi import vim, vmodl
@@ -8,8 +7,7 @@ from pyVim.connect import SmartConnect, Disconnect
 from prometheus_client import start_http_server
 
 
-# VCExporter class has information on what to collect,
-# how to collect it and how to export it
+# VCExporter class has init routines and shared functions for all VCExporters and 
 class VCExporter(exporter.Exporter):
 
     def __init__(self, exporterType, vcenterExporterConfigFile):
@@ -49,7 +47,6 @@ class VCExporter(exporter.Exporter):
 
     def disconnect_from_vcenter(self, si):
         Disconnect(si)
-
 
     def collect_properties(self, service_instance, view_ref, obj_type, path_set=None,
                         include_mors=False):
@@ -100,7 +97,6 @@ class VCExporter(exporter.Exporter):
 
         # Retrieve properties
         props = collector.RetrieveContents([filter_spec])
-
         data = []
         for obj in props:
             properties = {}

@@ -27,27 +27,19 @@ class ExporterFactory(object):
             print(str(ex))
             return None
 
-#@asyncio.coroutine
 async def run_loop(exporterInstance, duration):
-#def run_loop(exporterInstance, duration):
-        # Start infinite loop to get metrics
-    logging.info('Starting run_loop: ' + exporterInstance.exporterType)
+    # Start infinite loop to get metrics   
     while True:
-        logging.debug('====> total loop start: %s' % datetime.now())
+        logging.info('====> Starting run_loop: ' + exporterInstance.exporterType + ": " + str(datetime.now()))
         # get the start time of the loop to be able to fill it to intervall exactly at the end
         
         collect_start_time = int(time.time())
-        #asyncio.get_event_loop().create_task(exporterInstance.collect())
         exporterInstance.collect()
         collect_end_time = int(time.time())
 
-
         export_start_time = int(time.time())
-        #asyncio.get_event_loop().create_task(exporterInstance.export())
         exporterInstance.export()
         export_end_time = int(time.time())
-
-
 
         total_loop_time = ((collect_end_time - collect_start_time) + (export_end_time - export_start_time))
         #loop_end_time = int(time.time())
@@ -70,10 +62,10 @@ async def run_loop(exporterInstance, duration):
             loop_sleep_time = 0
 
         logging.debug('====> loop end before sleep: %s' % datetime.now())
+        
+        # Sleep until collection duration
         await asyncio.sleep(int(loop_sleep_time))
-        logging.debug('====> total loop end: %s' % datetime.now())
-
-        logging.info('Ending run_loop: ' + exporterInstance.exporterType)
+        logging.info('====> Ending run_loop: ' + exporterInstance.exporterType + ": " + str(datetime.now()))
         
         
 if __name__ == "__main__":
@@ -114,7 +106,7 @@ if __name__ == "__main__":
 
     logging = logging.getLogger()
 
-    # Create an asynchronous exporter for each exporter in the exporterConfigMapping
+    # Create an exporter for each exporter in the exporterConfigMapping
     run_loops = []
     for exportertype in exporterConfigMapping:
         currentExporter = ExporterFactory.create_exporter(exportertype, exporterType=exportertype, exporterConfig=exporterConfigMapping[exportertype])
@@ -123,11 +115,10 @@ if __name__ == "__main__":
         else:
             print("Couldn't add exporter "  + exportertype)
 
+    # Add async tasks to event_loop and run forever
     task_map = {}
     for task in run_loops:
         task_map[task] = asyncio.async(task[0](task[1], task[2]))
-        #task_map[task] = task[0](task[1], task[2])
-        #asyncio.get_event_loop().create_task(task_map[task])
     loop = asyncio.get_event_loop()
     loop.run_forever()
     

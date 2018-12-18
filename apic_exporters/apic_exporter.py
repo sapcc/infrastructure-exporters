@@ -1,6 +1,7 @@
 import exporter
 import socket
 import requests
+import logging
 import os
 import json
 from prometheus_client import start_http_server
@@ -21,6 +22,7 @@ class Apicexporter(exporter.Exporter):
                 start_http_server(int(self.exporterInfo['prometheus_port']))
 
     def getApicCookie(self, hostname, username, password, proxies):
+        logging.debug("Getting cookie from https://" + hostname + "/api/aaaLogin.json?")
         apiLoginUrl = "https://" + hostname + "/api/aaaLogin.json?"
         loginPayload = {"aaaUser":{"attributes": {"name": username, "pwd": password}}}
         r = requests.post(apiLoginUrl, json=loginPayload, proxies=proxies, verify=False)
@@ -30,6 +32,7 @@ class Apicexporter(exporter.Exporter):
         return apiCookie
 
     def apicGetRequest(self, url, apicCookie, proxies):
+        logging.debug("Making request to " + url)
         cookie = {"APIC-cookie": apicCookie}
         r = requests.get(url, cookies=cookie, proxies=proxies, verify=False)
         result = json.loads(r.text)

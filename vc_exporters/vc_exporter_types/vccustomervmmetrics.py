@@ -63,7 +63,6 @@ class Vccustomervmmetrics(VCExporter):
             type=[vim.VirtualMachine],
             recursive=True
         )
-
         selected_metrics = self.exporterInfo['vm_metrics']
 
         # Populate counter_ids_to_collect from config if specified
@@ -158,8 +157,7 @@ class Vccustomervmmetrics(VCExporter):
                     logging.debug(
                         '==> perfManager.QueryStats end: %s' % datetime.now())
                     self.metric_count += 1
-                    logging.info("Collected metrics for %d vms" % self.metric_count)
-
+                    logging.debug("Collected metrics for %d vms" % self.metric_count)
 
                     # loop over the metrics
                     logging.debug('==> gauge loop start: %s' % datetime.now())
@@ -181,26 +179,9 @@ class Vccustomervmmetrics(VCExporter):
                             gauge_finder = self.counter_info_values_list.index(val.id.counterId)
                             gauge_title = self.counter_info_keys_underscore[gauge_finder]
                             gauge_title = 'vcenter_' + gauge_title
-                            metric_val = val.value[0]
                             gauge_title = re.sub('\.', '_', gauge_title )
-                            asyncio.get_event_loop().create_task(self.update_gauge(gauge_title, annotations, item, datastore, metric_detail, metric_val))
-                            
-                            # self.gauge[gauge_title].labels(
-                            #             #list(self.counter_info.keys())[list(self.counter_info.values())
-                            #             #                            .index(val.id.counterId)]
-                            #             #.replace('.', '_')].labels(
-                            #                 annotations['name'],
-                            #                 annotations['projectid'], self.datacentername,
-                            #                 #self.regexs['shorter_names_regex'].sub(
-                            #                 #    '',
-                            #                 #    item["runtime.host"].name),
-                            #                 item["runtime.host"].name,
-                            #                 item["config.instanceUuid"],
-                            #                 item["config.guestId"],
-                            #                 datastore,
-                            #                 #metric_detail).set(val.value[0])
-                            #                 metric_detail).set(metric_val)   
-
+                            asyncio.get_event_loop().create_task(self.update_gauge(gauge_title, annotations, item, datastore, metric_detail, val.value[0]))
+                             
                     logging.debug('==> gauge loop end: %s' % datetime.now())
                     logging.debug("collected data for " + item['config.name'])
                 else:

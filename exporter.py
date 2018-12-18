@@ -36,7 +36,7 @@ class Exporter(ABC):
             try:
                 config = YamlConfig(configurationfile, defaults)
             except IOError as e:
-                print("Couldn't open configuration file: " + str(e))
+                logging.error("Couldn't open configuration file: " + str(e))
             return config
         else:
             logging.error("Config file doesn't exist: " + configurationfile)
