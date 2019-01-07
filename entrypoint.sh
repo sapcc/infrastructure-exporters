@@ -1,12 +1,7 @@
 #!/usr/bin/dumb-init /bin/sh
 
 
-# If user does not supply config file or type, use the default
-if [ "$1" = "cmd.py" ]; then
-    if [[ ! echo $@ | grep ' \-c' ] && [ ! echo $@ | grep ' \-f' ]]; then
-       set -- "$@" -f $(pwd)/samples/apicconfig.yaml
-       set -- "$@" -t apicexporter
-    fi
+# Check if container was called without arguments
+if [ "$#" -eq 0 ]; then
+  exec pipenv run python ./cmd.py -f /usr/src/app/samples/apicconfig.yaml -t apichealth
 fi
-
-exec pipenv run python ./cmd.py "$@"

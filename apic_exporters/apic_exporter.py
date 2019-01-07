@@ -26,15 +26,21 @@ class Apicexporter(exporter.Exporter):
         apiLoginUrl = "https://" + hostname + "/api/aaaLogin.json?"
         loginPayload = {"aaaUser":{"attributes": {"name": username, "pwd": password}}}
         r = requests.post(apiLoginUrl, json=loginPayload, proxies=proxies, verify=False)
-        result = json.loads(r.text)
-        r.close()
-        apiCookie = result['imdata'][0]['aaaLogin']['attributes']['token']
-        return apiCookie
+        if r.status_code != 200:
+            logging.info("Unable to get cookie at URL: " + apiLoginUrl)
+        else:
+            result = json.loads(r.text)
+            r.close()
+            apiCookie = result['imdata'][0]['aaaLogin']['attributes']['token']
+            return apiCookie
 
     def apicGetRequest(self, url, apicCookie, proxies):
         logging.debug("Making request to " + url)
         cookie = {"APIC-cookie": apicCookie}
         r = requests.get(url, cookies=cookie, proxies=proxies, verify=False)
-        result = json.loads(r.text)
-        r.close()
-        return result
+        if r.status_code != 200:
+            logging.info("Unable to get data from URL: " + url)
+        else:
+            result = json.loads(r.text)
+            r.close()
+            return result
