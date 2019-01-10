@@ -7,4 +7,5 @@ ADD . /usr/src/app
 RUN pip install pipenv
 RUN pipenv install
 
-CMD ./entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]
+
