@@ -7,15 +7,18 @@ device_information:
   log_level: INFO
 exporter_types:
   vcapiandversions:
+    name: vcapiandversions
     enabled: True
     collection_interval: 120
     prometheus_port: 9102
   vccustomerdsmetrics:
+    name: vccustomerdsmetrics
     enabled: True
     collection_interval: 120
     prometheus_port: 9102
     ignore_ds_match_regex: '(^.*Management.*$|.*local$)'
   vccustomervmmetrics:
+    name: vccustomervmmetrics
     enabled: True
     collection_interval: 120
     prometheus_port: 9102
@@ -46,7 +49,3 @@ exporter_types:
     - 'virtualDisk.writeIOI.latest'
     - 'virtualDisk.totalReadLatency.average'
     - 'virtualDisk.totalWriteLatency.average'
-  customerdsmetrics:
-    enabled: False
-    collection_interval: 120
-    prometheus_port: 9102

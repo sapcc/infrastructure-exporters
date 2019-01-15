@@ -10,6 +10,7 @@ device_information:
     log_level: INFO
 exporter_types:
     apichealth:
-        enabled: True
-        collection_interval: 60
-        prometheus_port: 9102
+      name: apichealth
+      enabled: True
+      collection_interval: 60
+      prometheus_port: 9102
