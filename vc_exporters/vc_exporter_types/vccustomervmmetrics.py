@@ -94,7 +94,7 @@ class Vccustomervmmetrics(VCExporter):
         #  should be averaged across all based on vcenter time
         vch_time = self.si.CurrentTime()
         start_time = vch_time - \
-            timedelta(seconds=(self.exporterInfo['collection_interval'] + 60))
+            timedelta(seconds=(int(self.exporterInfo['collection_interval']) + 60))
         end_time = vch_time - timedelta(seconds=60)
         perf_manager = self.si.content.perfManager
 
