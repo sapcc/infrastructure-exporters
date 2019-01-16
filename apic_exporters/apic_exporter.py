@@ -12,7 +12,7 @@ class Apicexporter(exporter.Exporter):
         super().__init__(exporterType, exporterConfig)
         self.apicInfo = self.exporterConfig['device_information']
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
-        self.duration = self.exporterInfo['collection_interval']
+        self.duration = int(self.exporterInfo['collection_interval'])
         self.loginCookie = self.getApicCookie(self.apicInfo['hostname'],
                                                     self.apicInfo['username'],
                                                     self.apicInfo['password'],

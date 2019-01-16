@@ -101,7 +101,6 @@ if __name__ == "__main__":
             exit(0)
         else:
             exporterConfigMapping[args.exportertype] = args.singleconfifigfile
-            print(exporterConfigMapping)
     else:
         parser.print_help()
 
