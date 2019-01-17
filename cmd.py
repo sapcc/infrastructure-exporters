@@ -52,7 +52,7 @@ async def run_loop(exporterInstance, duration):
         # the 0.9 makes sure we have some overlap to the last interval to avoid gaps in
         # metrics coverage (i.e. we get the metrics quicker than the averaging time)
         loop_sleep_time = 0.9 * \
-            exporterInstance.exporterConfig['exporter_types'][exporterInstance.exporterType]['collection_interval'] - \
+            int(exporterInstance.exporterConfig['exporter_types'][exporterInstance.exporterType]['collection_interval']) - \
             (collect_end_time - collect_start_time) + (export_end_time - export_end_time)
             #(loop_end_time - loop_start_time)
             
