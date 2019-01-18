@@ -19,11 +19,15 @@ class Apichealth(Apicexporter):
                                                           ['hostname'])                                                 
                                     
     def collect(self):
+        self.metric_count = 0
         self.apicHealthUrl =  "https://" + self.apicInfo['hostname'] + "/api/node/class/procEntity.json?"
         self.apicHealthInfo = self.apicGetRequest(self.apicHealthUrl, self.loginCookie, self.apicInfo['proxy'])
         self.apicMetrics = self.apicHealthInfo['imdata'][0]['procEntity']['attributes']
+        if self.status_code == 200:
+            self.metric_count = 3
 
     def export(self):
-        self.gauge['network_apic_cpu_percentage'].labels(self.apicInfo['hostname']).set(self.apicMetrics['cpuPct'])
-        self.gauge['network_apic_maxMemAlloc'].labels(self.apicInfo['hostname']).set(self.apicMetrics['maxMemAlloc'])
-        self.gauge['network_apic_memFree'].labels(self.apicInfo['hostname']).set(self.apicMetrics['memFree'])                                                                                                  
+        if self.status_code == 200:
+            self.gauge['network_apic_cpu_percentage'].labels(self.apicInfo['hostname']).set(self.apicMetrics['cpuPct'])
+            self.gauge['network_apic_maxMemAlloc'].labels(self.apicInfo['hostname']).set(self.apicMetrics['maxMemAlloc'])
+            self.gauge['network_apic_memFree'].labels(self.apicInfo['hostname']).set(self.apicMetrics['memFree'])                                                                                                  

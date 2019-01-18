@@ -18,8 +18,8 @@ class Apicexporter(exporter.Exporter):
                                                     self.apicInfo['password'],
                                                     self.apicInfo['proxy'])
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(('localhost', int(self.exporterInfo['prometheus_port']))) != 0:
-                start_http_server(int(self.exporterInfo['prometheus_port']))
+            if s.connect_ex(('localhost', int(self.exporterConfig['prometheus_port']))) != 0:
+                start_http_server(int(self.exporterConfig['prometheus_port']))
 
     def getApicCookie(self, hostname, username, password, proxies):
         logging.debug("Getting cookie from https://" + hostname + "/api/aaaLogin.json?")
@@ -28,10 +28,12 @@ class Apicexporter(exporter.Exporter):
         r = requests.post(apiLoginUrl, json=loginPayload, proxies=proxies, verify=False)
         if r.status_code != 200:
             logging.info("Unable to get cookie at URL: " + apiLoginUrl)
+            self.status_code = 0
         else:
             result = json.loads(r.text)
             r.close()
             apiCookie = result['imdata'][0]['aaaLogin']['attributes']['token']
+            self.status_code = 200
             return apiCookie
 
     def apicGetRequest(self, url, apicCookie, proxies):
@@ -40,7 +42,9 @@ class Apicexporter(exporter.Exporter):
         r = requests.get(url, cookies=cookie, proxies=proxies, verify=False)
         if r.status_code != 200:
             logging.info("Unable to get data from URL: " + url)
+            self.status_code = 0
         else:
             result = json.loads(r.text)
             r.close()
+            self.status_code = 200
             return result
