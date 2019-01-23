@@ -13,9 +13,9 @@ class Exporter(ABC):
         self.exporterType = exporterType
         self.metric_count = 0
         self.logger = logging.getLogger()
-        if self.exporterConfig['device_information']['log_level']:
+        if self.exporterConfig['log_level']:
             self.logger.setLevel(logging.getLevelName(
-                    self.exporterConfig['device_information']['log_level'].upper()))
+                    self.exporterConfig['log_level'].upper()))
         else:
             self.logger.setLevel(logging.getLevelName("INFO"))
         format = '[%(asctime)s] [%(levelname)s] %(message)s'
