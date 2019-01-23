@@ -6,7 +6,7 @@ device_information:
     proxy: 
         http: ''
         https: ''
-        no: '*'
+        no_proxy: '*'
     log_level: INFO
 exporter_types:
     apichealth:

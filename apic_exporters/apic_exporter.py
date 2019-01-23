@@ -11,12 +11,14 @@ class Apicexporter(exporter.Exporter):
     def __init__(self, exporterType, exporterConfig):
         super().__init__(exporterType, exporterConfig)
         self.apicInfo = self.exporterConfig['device_information']
+        # Convert proxy none key to no (for compliance with api)
+        self.apicInfo['proxy']['no'] = self.apicInfo['proxy'].pop('no_proxy')
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
         self.duration = int(self.exporterInfo['collection_interval'])
         self.loginCookie = self.getApicCookie(self.apicInfo['hostname'],
                                                     self.apicInfo['username'],
                                                     self.apicInfo['password'],
-                                                    self.apicInfo['proxy'])
+                                                    self.apicInfo['proxy'])   # Need to regex replce none with no
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(('localhost', int(self.exporterConfig['prometheus_port']))) != 0:
                 start_http_server(int(self.exporterConfig['prometheus_port']))
