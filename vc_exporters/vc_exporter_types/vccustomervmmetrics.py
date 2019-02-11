@@ -91,7 +91,6 @@ class Vccustomervmmetrics(VCExporter):
         self.metric_count = 0
  
     def export(self):
-        logging.info("Starting export")
         # define the time range in seconds the metric data from the vcenter
         #  should be averaged across all based on vcenter time
         vch_time = self.si.CurrentTime()
@@ -164,8 +163,7 @@ class Vccustomervmmetrics(VCExporter):
                     # loop over the metrics
                     logging.debug('==> gauge loop start: %s' % datetime.now())
                     # Create counter list for gauges
-
-                    logging.info("Starting gauge processing")
+                    
                     for val in result[0].value:
 
                         # send gauges to prometheus exporter: metricname and value with
