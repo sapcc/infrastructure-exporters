@@ -68,7 +68,7 @@ class Vcapiandversions(VCExporter):
 
         logging.debug('getting version information for each esx host')
 
-        host_data = self.collect_properties(self.si, self.hosts,
+        host_data, mors = self.collect_properties(self.si, self.hosts,
                                     vim.HostSystem, self.host_properties, True)
         for host in host_data:
             try:

@@ -98,14 +98,17 @@ class VCExporter(exporter.Exporter):
         # Retrieve properties
         props = collector.RetrieveContents([filter_spec])
         data = []
+        mors = {}
         for obj in props:
             properties = {}
             for prop in obj.propSet:
                 properties[prop.name] = prop.val
 
             if include_mors:
-                properties['obj'] = obj.obj
+                #properties['obj'] = obj.obj
+                properties['obj'] = str(obj.obj)
+                mors[str(obj.obj)] = obj.obj
 
             data.append(properties)
-        return data      
+        return data, mors      
     

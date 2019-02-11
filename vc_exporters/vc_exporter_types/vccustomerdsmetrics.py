@@ -62,7 +62,7 @@ class Vccustomerdsmetrics(VCExporter):
                 self.regexs[regular_expression] = re.compile('')
 
     def collect(self):
-        self.data = self.collect_properties(self.si, self.view_ref, vim.Datastore,
+        self.data, self.mors = self.collect_properties(self.si, self.view_ref, vim.Datastore,
                                   self.datastore_properties, True)
         self.metric_count = 0
     def export(self):

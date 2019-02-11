@@ -18,8 +18,9 @@ class Vccustomervmmetrics(VCExporter):
         self.regexs = {}
         self.counter_ids_to_collect = []
         self.metric_count = 0
+        # Removed "runtime.host" because it's a long expensive call
         self.vm_properties = [
-            "runtime.powerState", "runtime.host", "config.annotation", "config.name",
+            "runtime.powerState", "config.annotation", "config.name",
             "config.instanceUuid", "config.guestId", "summary.config.vmPathName"
         ]
 
@@ -85,11 +86,12 @@ class Vccustomervmmetrics(VCExporter):
 
     def collect(self):
          # get data
-        self.data = self.collect_properties(self.si, self.view_ref, vim.VirtualMachine,
+        self.data, self.mors = self.collect_properties(self.si, self.view_ref, vim.VirtualMachine,
                                   self.vm_properties, True)
         self.metric_count = 0
  
     def export(self):
+        logging.info("Starting export")
         # define the time range in seconds the metric data from the vcenter
         #  should be averaged across all based on vcenter time
         vch_time = self.si.CurrentTime()
@@ -102,13 +104,13 @@ class Vccustomervmmetrics(VCExporter):
 
             try:
                 if (item["runtime.powerState"] == "poweredOn" and
-                        self.regexs['openstack_match_regex'].match(item["config.annotation"]) and
-                        'production' in item["runtime.host"].parent.name
+                        self.regexs['openstack_match_regex'].match(item["config.annotation"]) #and
+                        #'production' in item["runtime.host"].parent.name
                         ) and not self.regexs['ignore_vm_match_regex'].match(item["config.name"]):
                     logging.debug('current vm processed - ' +
                                     item["config.name"])
-                    logging.debug('==> running on vcenter node: ' +
-                                    item["runtime.host"].name)
+                    #logging.debug('==> running on vcenter node: ' +
+                    #                item["runtime.host"].name)
 
                     # split the multi-line annotation into a dict
                     # per property (name, project-id, ...)
@@ -134,14 +136,14 @@ class Vccustomervmmetrics(VCExporter):
                         vim.PerformanceManager.MetricId(
                             counterId=i, instance="*") for i in self.counter_ids_to_collect
                     ]
-
+                    vm_instance = self.mors[item["obj"]]
                     # query spec for the metric stats query, the intervalId is the default one
                     logging.debug(
                         '==> vim.PerformanceManager.QuerySpec start: %s' %
                         datetime.now())
                     spec = vim.PerformanceManager.QuerySpec(
                         maxSample=1,
-                        entity=item["obj"],
+                        entity=vm_instance,
                         metricId=metric_ids,
                         intervalId=20,
                         startTime=start_time,
@@ -163,6 +165,7 @@ class Vccustomervmmetrics(VCExporter):
                     logging.debug('==> gauge loop start: %s' % datetime.now())
                     # Create counter list for gauges
 
+                    logging.info("Starting gauge processing")
                     for val in result[0].value:
 
                         # send gauges to prometheus exporter: metricname and value with
@@ -180,7 +183,7 @@ class Vccustomervmmetrics(VCExporter):
                             gauge_title = self.counter_info_keys_underscore[gauge_finder]
                             gauge_title = 'vcenter_' + gauge_title
                             gauge_title = re.sub('\.', '_', gauge_title )
-                            asyncio.get_event_loop().create_task(self.update_gauge(gauge_title, annotations, item, datastore, metric_detail, val.value[0]))
+                            self.update_gauge(gauge_title, annotations, item, datastore, metric_detail, val.value[0])
                              
                     logging.debug('==> gauge loop end: %s' % datetime.now())
                     logging.debug("collected data for " + item['config.name'])
@@ -193,11 +196,11 @@ class Vccustomervmmetrics(VCExporter):
             except Exception as e:
                 logging.info("couldn't get perf data: " + str(e))
 
-    async def update_gauge(self, gauge_title, annotations, item, datastore, metric_detail, metric_val):
+    def update_gauge(self, gauge_title, annotations, item, datastore, metric_detail, metric_val):
         self.gauge[gauge_title].labels(
                 annotations['name'],
                 annotations['projectid'], self.datacentername,
-                item["runtime.host"].name,
+                'ESX node no longer provided',
                 item["config.instanceUuid"],
                 item["config.guestId"],
                 datastore,
