@@ -26,7 +26,7 @@ Running an Exporter from cloned repo
 
 Running the exporter container
 ------------
-1. Clone the repo https://github.wdf.sap.corp/i814196/exporters.git
+1. Clone the repo  https://github.com/sapcc/infrastructure-exporters.git
 2. cd to the exporters folder
 3. modify the yaml files in samples/ to match your infrastructure
 3. build the container
@@ -60,8 +60,8 @@ Adding your own Exporter
    - i.e. mydevice_exporters/mydevice_utils.py
 - create a file for a shared infrastructure exporter
    - i.e. /mydevice_exporters/mydevice_exporter.py
-   - in this file ```import exporters```
-   - inherit the exporters.Exporter class in your class
+   - in this file ```import exporter```
+   - inherit the exporter.Exporter class in your class
       - ```class MydeviceExporter(exporter.Exporter)```
    - implement your \__init__() function which all exporters of this type will use
 - create a folder to house each exporter of this type
@@ -85,7 +85,7 @@ Add your exporter to the CLI Interface
 
 - modify cmd.py
    - import your exporter types
-     - i.e. ```from mydevice.exporters.mydevice_exporter_types import mydevice_healthcheck```
+     - i.e. ```from mydevice.exporter.mydevice_exporter_types import mydevice_healthcheck```
    - add your exporter to the 'EXPORTERS' class map
       - i.e. ```'mydevice_healthcheck': mydevice_healthcheck.Mydevice_healthcheck,```
    - EXPORTERS is a mapping of names of exporter types (passed via cli) and classes which implement these exporters
