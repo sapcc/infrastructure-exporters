@@ -7,7 +7,7 @@ import logging
 from datetime import timedelta, datetime
 from concurrent.futures import FIRST_COMPLETED
 from yamlconfig import YamlConfig
-from vc_exporters.vc_exporter_types import vcapiandversions, vccustomervmmetrics, vccustomerdsmetrics
+from vc_exporters.vc_exporter_types import vcapiandversions, vccustomervmmetrics, vccustomerdsmetrics, vchostmetrics
 from apic_exporters.apic_exporter_types import apichealth
 
 
@@ -15,7 +15,8 @@ EXPORTERS = {
     'vcapiandversions': vcapiandversions.Vcapiandversions,
     'vccustomervmmetrics': vccustomervmmetrics.Vccustomervmmetrics,
     'vccustomerdsmetrics': vccustomerdsmetrics.Vccustomerdsmetrics,
-    'apichealth': apichealth.Apichealth
+    'apichealth': apichealth.Apichealth,
+    'vchostmetrics': vchostmetrics.VcHostMetrics
 }
 
 class ExporterFactory(object):
