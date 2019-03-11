@@ -26,7 +26,7 @@ Running an Exporter from cloned repo
 
 Running the exporter container
 ------------
-1. Clone the repo  https://github.com/sapcc/infrastructure-exporters.git
+1. Clone the repo https://github.com/sapcc/infrastructure-exporters.git
 2. cd to the exporters folder
 3. modify the yaml files in samples/ to match your infrastructure
 3. build the container
