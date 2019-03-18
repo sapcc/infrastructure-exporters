@@ -1,7 +1,6 @@
 import logging
 import exporter
 import re
-import asyncio
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
 from datetime import datetime, timedelta

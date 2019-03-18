@@ -2,7 +2,6 @@ import time
 import argparse
 import os
 import exporter
-import asyncio
 import logging
 from datetime import timedelta, datetime
 from concurrent.futures import FIRST_COMPLETED
@@ -19,16 +18,8 @@ EXPORTERS = {
     'vchostmetrics': vchostmetrics.VcHostMetrics
 }
 
-class ExporterFactory(object):
-    @staticmethod
-    def create_exporter(exportertype, **kwargs):
-        try:
-            return EXPORTERS[exportertype.lower()](**kwargs)
-        except Exception as ex:
-            print(str(ex))
-            return None
 
-async def run_loop(exporterInstance, duration):
+def run_loop(exporterInstance, duration):
     # Start infinite loop to get metrics   
     while True:
         logging.info('====> Starting run_loop: ' + exporterInstance.exporterType + ": " + str(datetime.now()))
@@ -65,7 +56,8 @@ async def run_loop(exporterInstance, duration):
         logging.debug('====> loop end before sleep: %s' % datetime.now())
         
         # Sleep until collection duration
-        await asyncio.sleep(int(loop_sleep_time))
+        #await asyncio.sleep(int(loop_sleep_time))
+        time.sleep(int(loop_sleep_time))
         logging.info('====> Ending run_loop: ' + exporterInstance.exporterType + ": " + str(datetime.now()))
         
         
@@ -75,51 +67,21 @@ if __name__ == "__main__":
     # Take a list of exporter configs and runs their collectors and exporters
     parser = argparse.ArgumentParser(description='Arguments for vcexporter.py')
     parser.add_argument(
-        "-c", "--exporterconfigfiles", help="Specify config files for the exporters, comma separated, full path")
-    parser.add_argument(
         "-f", "--singleconfifigfile", help="Specify full path to single config file to run only one exporter.  Must use -t flag also to specify type." )
     parser.add_argument(
         "-t", "--exportertype", help="Specify exporter type [vcapiandversions, vccustomervmmetrics, vccustomerdsmetrics, apichealth] Used with -f flag")
     args, remaining_argv = parser.parse_known_args()
     
-    # Process arguments and create exporterConfigMapping
-    if args.exporterconfigfiles is not None:
-        configFiles = args.exporterconfigfiles.split(',')
-        for configFile in configFiles:
-            if not configFile.startswith("/"):
-                print("Please use full path to config files")
-                exit(0)
-            else:
-                exporterConfigs = exporter.Exporter.get_config(configFile)
-                for exporterType in exporterConfigs['exporter_types']:
-                    exporter_enabled = exporterConfigs.get('exporter_types', {}).get(exporterType, {}).get('enabled')
-                    if exporter_enabled:
-                        exporterConfigMapping[exporterType] = configFile
-    
-    elif args.singleconfifigfile is not None and args.exportertype is not None:
+    if args.singleconfifigfile is not None and args.exportertype is not None:
         if not args.singleconfifigfile.startswith("/"):
             print("Please use full path to configfile")
             exit(0)
         else:
-            exporterConfigMapping[args.exportertype] = args.singleconfifigfile
+            logging = logging.getLogger()
+            infraExporter = EXPORTERS[args.exportertype.lower()](args.exportertype.lower(), args.singleconfifigfile)
+            run_loop(infraExporter, infraExporter.duration)
+
     else:
         parser.print_help()
 
-    logging = logging.getLogger()
-
-    # Create an exporter for each exporter in the exporterConfigMapping
-    run_loops = []
-    for exportertype in exporterConfigMapping:
-        currentExporter = ExporterFactory.create_exporter(exportertype, exporterType=exportertype, exporterConfig=exporterConfigMapping[exportertype])
-        if currentExporter != None:
-            run_loops.append((run_loop, currentExporter, currentExporter.duration))
-        else:
-            print("Couldn't add exporter "  + exportertype)
-
-    # Add async tasks to event_loop and run forever
-    task_map = {}
-    for task in run_loops:
-        task_map[task] = asyncio.async(task[0](task[1], task[2]))
-    loop = asyncio.get_event_loop()
-    loop.run_forever()
     
