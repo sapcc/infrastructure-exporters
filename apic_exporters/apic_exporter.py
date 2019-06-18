@@ -15,10 +15,14 @@ class Apicexporter(exporter.Exporter):
         self.apicInfo['proxy']['no'] = self.apicInfo['proxy'].pop('no_proxy')
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
         self.duration = int(self.exporterInfo['collection_interval'])
-        self.loginCookie = self.getApicCookie(self.apicInfo['hostname'],
-                                                    self.apicInfo['username'],
-                                                    self.apicInfo['password'],
-                                                    self.apicInfo['proxy'])   # Need to regex replce none with no
+        self.apicHosts = {}
+        for apicHost in self.apicInfo['hosts'].split(","):
+            self.apicHosts[apicHost] = {}
+            self.apicHosts[apicHost]['name'] = apicHost
+            self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost,
+                                                        self.apicInfo['username'],
+                                                        self.apicInfo['password'],
+                                                        self.apicInfo['proxy'])   # Need to regex replce none with no
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(('localhost', int(self.exporterConfig['prometheus_port']))) != 0:
                 start_http_server(int(self.exporterConfig['prometheus_port']))

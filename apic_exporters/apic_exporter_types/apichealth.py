@@ -20,14 +20,19 @@ class Apichealth(Apicexporter):
                                     
     def collect(self):
         self.metric_count = 0
-        self.apicHealthUrl =  "https://" + self.apicInfo['hostname'] + "/api/node/class/procEntity.json?"
-        self.apicHealthInfo = self.apicGetRequest(self.apicHealthUrl, self.loginCookie, self.apicInfo['proxy'])
-        self.apicMetrics = self.apicHealthInfo['imdata'][0]['procEntity']['attributes']
-        if self.status_code == 200:
-            self.metric_count = 3
+        for apicHost in self.apicHosts:
+            apicHealthUrl =  "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/procEntity.json?"
+            apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'])
+            self.apicHosts[apicHost]['apicMetrics'] = apicHealthInfo['imdata'][0]['procEntity']['attributes']
+            if self.status_code == 200:
+                self.metric_count += 3
+                self.apicHosts[apicHost]['status_code'] = 200
+            else:
+                self.apicHosts[apicHost]['status_code'] = 500
 
     def export(self):
-        if self.status_code == 200:
-            self.gauge['network_apic_cpu_percentage'].labels(self.apicInfo['hostname']).set(self.apicMetrics['cpuPct'])
-            self.gauge['network_apic_maxMemAlloc'].labels(self.apicInfo['hostname']).set(self.apicMetrics['maxMemAlloc'])
-            self.gauge['network_apic_memFree'].labels(self.apicInfo['hostname']).set(self.apicMetrics['memFree'])                                                                                                  
+        for apicHost in self.apicHosts:
+            if self.apicHosts[apicHost]['status_code'] == 200:
+                self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['cpuPct'])
+                self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['maxMemAlloc'])
+                self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['memFree'])                                                                                                  
