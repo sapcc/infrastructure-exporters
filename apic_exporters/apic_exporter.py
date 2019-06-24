@@ -46,6 +46,8 @@ class Apicexporter(exporter.Exporter):
         logging.debug("Making request to " + url)
         cookie = {"APIC-cookie": apicCookie}
         r = requests.get(url, cookies=cookie, proxies=proxies, verify=False)
+        if r.status_code == 403 and "Token was invalid" in r.text:
+            return "Renew Token"
         if r.status_code != 200:
             logging.info("Unable to get data from URL: " + url)
             self.status_code = 0

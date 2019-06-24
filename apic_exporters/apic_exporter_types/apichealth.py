@@ -23,12 +23,18 @@ class Apichealth(Apicexporter):
         for apicHost in self.apicHosts:
             apicHealthUrl =  "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/procEntity.json?"
             apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'])
-            self.apicHosts[apicHost]['apicMetrics'] = apicHealthInfo['imdata'][0]['procEntity']['attributes']
-            if self.status_code == 200:
+            if apicHealthInfo == "Renew Token":
+                self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost,
+                                                        self.apicInfo['username'],
+                                                        self.apicInfo['password'],
+                                                        self.apicInfo['proxy'])
+                apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'])
+            if apicHealthInfo.get('imdata') != None and self.status_code == 200:
+                self.apicHosts[apicHost]['apicMetrics'] = apicHealthInfo['imdata'][0]['procEntity']['attributes']
                 self.metric_count += 3
-                self.apicHosts[apicHost]['status_code'] = 200
+                self.apicHosts[apicHost]['status_code'] = self.status_code
             else:
-                self.apicHosts[apicHost]['status_code'] = 500
+                self.apicHosts[apicHost]['status_code'] = self.status_code
 
     def export(self):
         for apicHost in self.apicHosts:
