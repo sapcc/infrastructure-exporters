@@ -31,7 +31,7 @@ class Apichealth(Apicexporter):
                                                         self.apicInfo['username'],
                                                         self.apicInfo['password'],
                                                         self.apicInfo['proxy'])
-                apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'])
+                apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy']apicHost)
             if apicHealthInfo.get('imdata') != None and self.apicHosts[apicHost]['status_code'] == 200:
                 self.apicHosts[apicHost]['apicMetrics'] = apicHealthInfo['imdata'][0]['procEntity']['attributes']
                 self.metric_count += 3
