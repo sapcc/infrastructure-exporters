@@ -19,6 +19,7 @@ class Apicexporter(exporter.Exporter):
         for apicHost in self.apicInfo['hosts'].split(","):
             self.apicHosts[apicHost] = {}
             self.apicHosts[apicHost]['name'] = apicHost
+            self.apicHosts[apicHost]['canConnectToAPIC'] = True
             self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost,
                                                         self.apicInfo['username'],
                                                         self.apicInfo['password'],
@@ -27,32 +28,45 @@ class Apicexporter(exporter.Exporter):
             if s.connect_ex(('localhost', int(self.exporterConfig['prometheus_port']))) != 0:
                 start_http_server(int(self.exporterConfig['prometheus_port']))
 
-    def getApicCookie(self, hostname, username, password, proxies):
-        logging.debug("Getting cookie from https://" + hostname + "/api/aaaLogin.json?")
-        apiLoginUrl = "https://" + hostname + "/api/aaaLogin.json?"
+    def getApicCookie(self, apicHost, username, password, proxies):
+        logging.debug("Getting cookie from https://" + apicHost + "/api/aaaLogin.json?")
+        apiLoginUrl = "https://" + apicHost + "/api/aaaLogin.json?"
         loginPayload = {"aaaUser":{"attributes": {"name": username, "pwd": password}}}
-        r = requests.post(apiLoginUrl, json=loginPayload, proxies=proxies, verify=False)
+        try:
+            r = requests.post(apiLoginUrl, json=loginPayload, proxies=proxies, verify=False, timeout=15)
+        except requests.exceptions.ConnectionError as e:
+            logging.error("Can't connect to apic at " + apicHost)
+            self.apicHosts[apicHost]['canConnectToAPIC'] = False
+            self.apicHosts[apicHost]['status_code'] = 0
+            return None
+
         if r.status_code != 200:
             logging.info("Unable to get cookie at URL: " + apiLoginUrl)
-            self.status_code = 0
+            self.apicHosts[apicHost]['status_code'] = 0
         else:
             result = json.loads(r.text)
             r.close()
             apiCookie = result['imdata'][0]['aaaLogin']['attributes']['token']
-            self.status_code = 200
+            self.apicHosts[apicHost]['status_code'] = 200
             return apiCookie
 
-    def apicGetRequest(self, url, apicCookie, proxies):
+    def apicGetRequest(self, url, apicCookie, proxies, apicHost):
         logging.debug("Making request to " + url)
         cookie = {"APIC-cookie": apicCookie}
-        r = requests.get(url, cookies=cookie, proxies=proxies, verify=False)
+        try:
+            r = requests.get(url, cookies=cookie, proxies=proxies, verify=False, timeout=15)
+        except Exception as e:
+            logging.error("Problem getting cookie for apic at " + apicHost)
+            return None
+
+
         if r.status_code == 403 and "Token was invalid" in r.text:
             return "Renew Token"
         if r.status_code != 200:
             logging.info("Unable to get data from URL: " + url)
-            self.status_code = 0
+            self.apicHosts[apicHost]['status_code'] = 0
         else:
             result = json.loads(r.text)
             r.close()
-            self.status_code = 200
+            self.apicHosts[apicHost]['status_code']= 200
             return result

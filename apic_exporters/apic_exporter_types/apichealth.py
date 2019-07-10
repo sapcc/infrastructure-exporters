@@ -21,24 +21,31 @@ class Apichealth(Apicexporter):
     def collect(self):
         self.metric_count = 0
         for apicHost in self.apicHosts:
+            if self.apicHosts[apicHost]['canConnectToAPIC'] == False:
+                continue
+
             apicHealthUrl =  "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/procEntity.json?"
-            apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'])
+            apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
             if apicHealthInfo == "Renew Token":
                 self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost,
                                                         self.apicInfo['username'],
                                                         self.apicInfo['password'],
                                                         self.apicInfo['proxy'])
                 apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'])
-            if apicHealthInfo.get('imdata') != None and self.status_code == 200:
+            if apicHealthInfo.get('imdata') != None and self.apicHosts[apicHost]['status_code'] == 200:
                 self.apicHosts[apicHost]['apicMetrics'] = apicHealthInfo['imdata'][0]['procEntity']['attributes']
                 self.metric_count += 3
-                self.apicHosts[apicHost]['status_code'] = self.status_code
-            else:
-                self.apicHosts[apicHost]['status_code'] = self.status_code
 
     def export(self):
         for apicHost in self.apicHosts:
-            if self.apicHosts[apicHost]['status_code'] == 200:
+            if self.apicHosts[apicHost]['status_code'] != 200:
+                self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(-1)
+                self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(-1)
+                self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(-1)
+                continue
+
+            else:
                 self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['cpuPct'])
                 self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['maxMemAlloc'])
-                self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['memFree'])                                                                                                  
+                self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['memFree'])
+                                                                                               
