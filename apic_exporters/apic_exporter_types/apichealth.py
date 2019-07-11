@@ -30,7 +30,7 @@ class Apichealth(Apicexporter):
                 self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost,
                                                         self.apicInfo['username'],
                                                         self.apicInfo['password'],
-                                                        self.apicInfo['proxy'],apicHost)
+                                                        self.apicInfo['proxy'])
                 apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'],apicHost)
             
             if self.apicHosts[apicHost]['status_code'] == 200 and apicHealthInfo.get('imdata') != None:
