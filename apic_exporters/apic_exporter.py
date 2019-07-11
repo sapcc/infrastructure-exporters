@@ -57,6 +57,7 @@ class Apicexporter(exporter.Exporter):
             r = requests.get(url, cookies=cookie, proxies=proxies, verify=False, timeout=15)
         except Exception as e:
             logging.error("Problem getting cookie for apic at " + apicHost)
+            self.apicHosts[apicHost]['status_code'] = 0
             return None
 
 
