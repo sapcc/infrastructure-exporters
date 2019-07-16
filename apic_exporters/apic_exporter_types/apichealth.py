@@ -16,11 +16,15 @@ class Apichealth(Apicexporter):
                                                           ['hostname'])
         self.gauge['network_apic_memFree'] = Gauge('network_apic_memFree',
                                                           'network_apic_memFree',
-                                                          ['hostname'])                                                 
+                                                          ['hostname'])
+        self.gauge['network_apic_pyscial_interface_resets'] = Gauge('network_apic_pyscial_interface_resets',
+                                        'network_apic_pyscial_interface_resets',
+                                        ['interfaceID'])                                               
                                     
     def collect(self):
         self.metric_count = 0
         for apicHost in self.apicHosts:
+            self.apicHosts[apicHost]['physIf'] = []
             if self.apicHosts[apicHost]['canConnectToAPIC'] == False:
                 continue
 
@@ -36,6 +40,15 @@ class Apichealth(Apicexporter):
             if self.apicHosts[apicHost]['status_code'] == 200 and apicHealthInfo.get('imdata') != None:
                 self.apicHosts[apicHost]['apicMetrics'] = apicHealthInfo['imdata'][0]['procEntity']['attributes']
                 self.metric_count += 3
+            
+            physIfUrl = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/ethpmPhysIf.json?"
+            physIfInfo = apicPodInfo = self.apicGetRequest(physIfUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'],apicHost)
+            if self.apicHosts[apicHost]['status_code'] == 200 and physIfInfo != None:
+                for physIf in physIfInfo['imdata']:
+                    resetCtr = physIf['ethpmPhysIf']['attributes']['resetCtr']
+                    physIfDN = physIf['ethpmPhysIf']['attributes']['dn']
+                    self.apicHosts[apicHost]['physIf'].append({'dn':physIfDN, 'resetCtr':resetCtr, 'status_code':200})
+                    self.metric_count += 1
 
     def export(self):
         for apicHost in self.apicHosts:
@@ -49,4 +62,10 @@ class Apichealth(Apicexporter):
                 self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['cpuPct'])
                 self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['maxMemAlloc'])
                 self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['memFree'])
-                                                                                               
+                          
+            for physIf in self.apicHosts[apicHost]['physIf']:
+                if physIf['status_code'] == 200:
+                    physIfLabel = self.apicHosts[apicHost]['name'] + "-" + physIf['dn']
+                    self.gauge['network_apic_pyscial_interface_resets'].labels(physIfLabel).set(physIf['resetCtr'])       
+                else:
+                    self.gauge['network_apic_pyscial_interface_resets'].labels(physIfLabel).set(-1)
