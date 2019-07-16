@@ -17,8 +17,8 @@ class Apichealth(Apicexporter):
         self.gauge['network_apic_memFree'] = Gauge('network_apic_memFree',
                                                           'network_apic_memFree',
                                                           ['hostname'])
-        self.gauge['network_apic_pyscial_interface_resets'] = Gauge('network_apic_pyscial_interface_resets',
-                                        'network_apic_pyscial_interface_resets',
+        self.gauge['network_apic_physcial_interface_resets'] = Gauge('network_apic_physcial_interface_resets',
+                                        'network_apic_physcial_interface_resets',
                                         ['interfaceID'])                                               
                                     
     def collect(self):
@@ -66,6 +66,6 @@ class Apichealth(Apicexporter):
             for physIf in self.apicHosts[apicHost]['physIf']:
                 if physIf['status_code'] == 200:
                     physIfLabel = self.apicHosts[apicHost]['name'] + "-" + physIf['dn']
-                    self.gauge['network_apic_pyscial_interface_resets'].labels(physIfLabel).set(physIf['resetCtr'])       
+                    self.gauge['network_apic_physcial_interface_resets'].labels(physIfLabel).set(physIf['resetCtr'])       
                 else:
-                    self.gauge['network_apic_pyscial_interface_resets'].labels(physIfLabel).set(-1)
+                    self.gauge['network_apic_physcial_interface_resets'].labels(physIfLabel).set(-1)
