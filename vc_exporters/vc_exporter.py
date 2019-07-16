@@ -2,6 +2,7 @@ import exporter
 import socket
 import ssl
 import os
+import atexit
 from pyVmomi import vim, vmodl
 from pyVim.connect import SmartConnect, Disconnect
 from prometheus_client import start_http_server
@@ -41,6 +42,9 @@ class VCExporter(exporter.Exporter):
                 pwd=pwd,
                 port=port,
                 sslContext=context)
+            
+            atexit.register(Disconnect, si)
+            
         except IOError as e:
             raise SystemExit("Unable to connect to host with supplied info. Error %s: " % str(e))
         return si
