@@ -74,10 +74,8 @@ jobs:
                 go get -u github.com/jteeuwen/go-bindata/...
                 go get -u github.com/h2non/gock
                 go get -u github.com/stretchr/testify
-                make -C gopath/src/github.com/sapcc/vc-apic-exporters generate check build/docker.tar
-                mkdir vc-apic-exporters.image/build
-                cp gopath/src/github.com/sapcc/maia/build/docker.tar vc-apic-exporters.image/build/docker.tar
-                cp gopath/src/github.com/sapcc/maia/Dockerfile vc-apic-exporters.image/
+                make -C gopath/src/github.com/sapcc/vc-apic-exporters build push
+                
       - aggregate:
         - put: vc-apic-exporters.image
           params:
