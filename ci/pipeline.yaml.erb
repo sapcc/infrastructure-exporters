@@ -1,0 +1,85 @@
+source: &registry
+  host:       {{docker-registry-quay-host}}
+  email:      {{docker-registry-email}}
+  username:   {{docker-registry-quay-robotuser}}
+  password:   {{docker-registry-quay-token}}
+
+resource_types:
+  - name: time-version
+    type: docker-image
+    source:
+      repository: hub.global.cloud.sap/concourse/time-version-resource
+      tag: v2 
+
+image_resource: &go-pipeline
+  image_resource:
+    type: docker-image
+    source:
+      repository: golang
+      tag: '1.11-stretch'
+
+resources:
+  - name: vc-apic-exporters.git
+    type: git
+    source:
+      uri:   https://github.com/sapcc/infrastructure-exporters.git
+      branch: master 
+      
+  - name: vc-apic-exporters-ng.version
+    type: time-version
+
+  - name: vc-apic-exporters.image
+    type: docker-image
+    source:
+      <<: *registry
+      repository: hub.global.cloud.sap/monsoon/infrastructure-exporters
+
+jobs:
+  - name: build-vc-apic-exporters
+    serial: true
+    plan:
+      - aggregate:
+        - get: vc-apic-exporters.git
+          trigger: true
+        - put: vc-apic-exporters-ng.version
+     
+      - task: build-vc-apic-exporters
+        privileged: true
+        config:
+          platform: linux
+          <<: *go-pipeline
+          inputs:
+          - name: vc-apic-exporters.git
+            path: gopath/src/github.com/sapcc/vc-apic-exporters
+          - name: vc-apic-exporters-ng.version
+          outputs:
+          - name: vc-apic-exporters.image
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                set -u pipefail
+                export GOPATH=$PWD/gopath
+                cat >>gopath/src/github.com/sapcc/vc-apic-exporters/Dockerfile <<-EOF
+                RUN apk add --update wget ca-certificates && \
+                    update-ca-certificates && apk del wget
+                EOF
+                export PATH=/usr/local/go/bin:$GOPATH/bin:$PATH
+                # set up tools
+                go get -u github.com/Masterminds/glide
+                go get -u github.com/golang/lint/golint
+                go get -u github.com/mattn/goveralls
+                go get -u github.com/golang/mock/mockgen
+                go get -u github.com/jteeuwen/go-bindata/...
+                go get -u github.com/h2non/gock
+                go get -u github.com/stretchr/testify
+                make -C gopath/src/github.com/sapcc/vc-apic-exporters generate check build/docker.tar
+                mkdir vc-apic-exporters.image/build
+                cp gopath/src/github.com/sapcc/maia/build/docker.tar vc-apic-exporters.image/build/docker.tar
+                cp gopath/src/github.com/sapcc/maia/Dockerfile vc-apic-exporters.image/
+      - aggregate:
+        - put: vc-apic-exporters.image
+          params:
+            build: vc-apic-exporters.image
+            tag: vc-apic-exporters-ng.version/version
