@@ -98,6 +98,37 @@ class Vccustomervmmetrics(VCExporter):
         end_time = vch_time - timedelta(seconds=60)
         perf_manager = self.si.content.perfManager
 
+
+
+        perfQueries = []
+        queryResult = []
+        queryDict = {}
+
+        for group in self.chuncker(self.data, 50):
+            for item in group:
+                if (item["runtime.powerState"] == "poweredOn" and
+                            self.regexs['openstack_match_regex'].match(item["config.annotation"]) #and
+                            #'production' in item["runtime.host"].parent.name
+                            ) and not self.regexs['ignore_vm_match_regex'].match(item["config.name"]):
+                    metric_ids = [
+                            vim.PerformanceManager.MetricId(
+                                counterId=i, instance="*") for i in self.counter_ids_to_collect
+                        ]
+                    vm_instance = self.mors[item["obj"]]
+                    spec = vim.PerformanceManager.QuerySpec(
+                            maxSample=1,
+                            entity=vm_instance,
+                            metricId=metric_ids,
+                            intervalId=20,
+                            startTime=start_time,
+                            endTime=end_time)
+                    perfQueries.append(spec)
+                    self.metric_count += 1
+            queryResult.append(perf_manager.QueryStats(querySpec=[spec]))
+
+        for x in queryResult:
+            queryDict[x[0].entity] = x[0].value
+
         for item in self.data:
 
             try:
@@ -129,41 +160,9 @@ class Vccustomervmmetrics(VCExporter):
                     datastore = item["summary.config.vmPathName"].split('[', 1)[1].split(']')[
                         0]
 
-                    # get a list of metricids for this vm in preparation for the stats query
-                    metric_ids = [
-                        vim.PerformanceManager.MetricId(
-                            counterId=i, instance="*") for i in self.counter_ids_to_collect
-                    ]
                     vm_instance = self.mors[item["obj"]]
-                    # query spec for the metric stats query, the intervalId is the default one
-                    logging.debug(
-                        '==> vim.PerformanceManager.QuerySpec start: %s' %
-                        datetime.now())
-                    spec = vim.PerformanceManager.QuerySpec(
-                        maxSample=1,
-                        entity=vm_instance,
-                        metricId=metric_ids,
-                        intervalId=20,
-                        startTime=start_time,
-                        endTime=end_time)
-                    logging.debug(
-                        '==> vim.PerformanceManager.QuerySpec end: %s' %
-                        datetime.now())
-
-                    # get metric stats from vcenter
-                    logging.debug('==> perfManager.QueryStats start: %s' %
-                                    datetime.now())
-                    result = perf_manager.QueryStats(querySpec=[spec])
-                    logging.debug(
-                        '==> perfManager.QueryStats end: %s' % datetime.now())
-                    self.metric_count += 1
-                    logging.debug("Collected metrics for %d vms" % self.metric_count)
-
-                    # loop over the metrics
-                    logging.debug('==> gauge loop start: %s' % datetime.now())
-                    # Create counter list for gauges
                     
-                    for val in result[0].value:
+                    for val in queryDict[vm_instance]:
 
                         # send gauges to prometheus exporter: metricname and value with
                         # labels: vm name, project id, vcenter name, vcneter
@@ -192,6 +191,9 @@ class Vccustomervmmetrics(VCExporter):
                 logging.debug("property not defined for vm: " + str(e))
             except Exception as e:
                 logging.info("couldn't get perf data: " + str(e))
+
+    def chuncker(self, seq, size):
+        return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
     def update_gauge(self, gauge_title, annotations, item, datastore, metric_detail, metric_val):
         self.gauge[gauge_title].labels(
