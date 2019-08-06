@@ -6,9 +6,7 @@ name = "pypi"
 [packages]
 yamlconfig = "*"
 prometheus_client = "*"
-asyncio = "*"
 pyvmomi = "*"
-abc = "*"
 
 [dev-packages]
 
