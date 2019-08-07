@@ -1,5 +1,7 @@
 import logging
 import re
+import socket
+import errno
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
 from datetime import datetime, timedelta
@@ -182,9 +184,17 @@ class Vccustomervmmetrics(VCExporter):
                             gauge_title = self.counter_info_keys_underscore[gauge_finder]
                             gauge_title = 'vcenter_' + gauge_title
                             gauge_title = re.sub('\.', '_', gauge_title)
-                            self.update_gauge(gauge_title, annotations, item,
-                                              datastore, metric_detail,
-                                              val.value[0])
+                            try:
+                                self.update_gauge(gauge_title, annotations, item,
+                                                  datastore, metric_detail,
+                                                  val.value[0])
+                            except socket.error as e:
+                                if e.errno != erno.EPIPE:
+                                    raise
+                                logging.info("Brokent pipe updating gauge")
+                            except Exception as e:
+                                logging.info("Unable to update gauge")
+                                
 
                     logging.debug('==> gauge loop end: %s' % datetime.now())
                     logging.debug("collected data for " + item['config.name'])
