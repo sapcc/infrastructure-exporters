@@ -1,7 +1,5 @@
 import unittest
 import os
-import exporter
-import gc
 from apic_exporters.apic_exporter_types import apichealth
 from prometheus_client.core import REGISTRY
 

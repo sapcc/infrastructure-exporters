@@ -1,9 +1,5 @@
 import unittest
 import os
-import urllib
-import sys
-import exporter
-from vc_exporters import vc_exporter
 from vc_exporters.vc_exporter_types import vccustomerdsmetrics
 from prometheus_client.core import REGISTRY
 

@@ -3,8 +3,6 @@ import os
 import ssl
 import exporter
 from pyVim.connect import SmartConnect, Disconnect
-from vc_exporters import vc_exporter
-from vc_exporters.vc_exporter_types import vcapiandversions
 
 class TestExporter(unittest.TestCase):
 

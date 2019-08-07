@@ -1,5 +1,3 @@
-import exporter
-import requests
 from apic_exporters.apic_exporter import Apicexporter
 from prometheus_client import Gauge
 

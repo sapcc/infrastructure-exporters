@@ -1,8 +1,7 @@
 import logging
-import exporter
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
-from pyVmomi import vim, vmodl
+from pyVmomi import vim
 
 class Vcapiandversions(VCExporter):
     

@@ -1,13 +1,12 @@
 import exporter
 import socket
 import ssl
-import os
-from pyVmomi import vim, vmodl
+from pyVmomi import vmodl
 from pyVim.connect import SmartConnect, Disconnect
 from prometheus_client import start_http_server
 
 
-# VCExporter class has init routines and shared functions for all VCExporters and 
+# VCExporter class has init routines and shared functions for all VCExporters
 class VCExporter(exporter.Exporter):
 
     def __init__(self, exporterType, vcenterExporterConfigFile):
@@ -16,14 +15,14 @@ class VCExporter(exporter.Exporter):
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
         self.duration = int(self.exporterInfo['collection_interval'])
         self.si = self.connect_to_vcenter(self.vcenterInfo['hostname'],
-                                             self.vcenterInfo['username'],
-                                             self.vcenterInfo['password'],
-                                             self.vcenterInfo['port'],
-                                             self.vcenterInfo['ignore_ssl'],)
+                                          self.vcenterInfo['username'],
+                                          self.vcenterInfo['password'],
+                                          self.vcenterInfo['port'],
+                                          self.vcenterInfo['ignore_ssl'],)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(('localhost', int(self.exporterConfig['prometheus_port']))) != 0:
                 start_http_server(int(self.exporterConfig['prometheus_port']))
-                
+
     def connect_to_vcenter(self, host, user, pwd, port, ignore_ssl):
 
         # vCenter preparations
@@ -49,7 +48,7 @@ class VCExporter(exporter.Exporter):
         Disconnect(si)
 
     def collect_properties(self, service_instance, view_ref, obj_type, path_set=None,
-                        include_mors=False):
+                           include_mors=False):
         """
         Collect properties for managed objects from a view ref
         Check the vSphere API documentation for example on retrieving
@@ -105,10 +104,8 @@ class VCExporter(exporter.Exporter):
                 properties[prop.name] = prop.val
 
             if include_mors:
-                #properties['obj'] = obj.obj
                 properties['obj'] = str(obj.obj)
                 mors[str(obj.obj)] = obj.obj
 
             data.append(properties)
-        return data, mors      
-    
+        return data, mors

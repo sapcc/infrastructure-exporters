@@ -1,9 +1,9 @@
 import os
 import sys
 import logging
-import time
 from abc import ABC, abstractmethod
 from yamlconfig import YamlConfig
+
 
 class Exporter(ABC):
 
@@ -19,7 +19,7 @@ class Exporter(ABC):
         else:
             self.logger.setLevel(logging.getLevelName("INFO"))
         format = '[%(asctime)s] [%(levelname)s] %(message)s'
-        logging.basicConfig(stream=sys.stdout, format=format)    
+        logging.basicConfig(stream=sys.stdout, format=format)
 
     @abstractmethod
     def collect(self):

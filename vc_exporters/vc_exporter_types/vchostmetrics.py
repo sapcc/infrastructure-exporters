@@ -1,10 +1,7 @@
 import logging
-import exporter
-import re
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
-from datetime import datetime, timedelta
-from pyVmomi import vim, vmodl
+from pyVmomi import vim
 
 
 class VcHostMetrics(VCExporter):

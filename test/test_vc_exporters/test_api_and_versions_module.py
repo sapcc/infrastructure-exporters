@@ -1,9 +1,5 @@
 import unittest
 import os
-import sys
-import exporter
-from vc_exporters import vc_exporter
-from vc_exporters.vc_exporter_types import vcapiandversions, vccustomervmmetrics
 from prometheus_client.core import REGISTRY
 
 class TestVcexporters(unittest.TestCase):

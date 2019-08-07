@@ -2,7 +2,6 @@ import exporter
 import socket
 import requests
 import logging
-import os
 import json
 from prometheus_client import start_http_server
 

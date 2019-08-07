@@ -1,14 +1,13 @@
 import logging
-import exporter
 import re
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
 from datetime import datetime, timedelta
-from pyVmomi import vim, vmodl
+from pyVmomi import vim
 
 
 class Vccustomervmmetrics(VCExporter):
-    
+
     def __init__(self, exporterType, exporterConfig):
         super().__init__(exporterType, exporterConfig)
         self.gauge = {}
@@ -20,7 +19,8 @@ class Vccustomervmmetrics(VCExporter):
         # Removed "runtime.host" because it's a long expensive call
         self.vm_properties = [
             "runtime.powerState", "config.annotation", "config.name",
-            "config.instanceUuid", "config.guestId", "summary.config.vmPathName"
+            "config.instanceUuid", "config.guestId",
+            "summary.config.vmPathName"
         ]
 
         # compile a regex for trying to filter out openstack generated vms
@@ -28,7 +28,8 @@ class Vccustomervmmetrics(VCExporter):
         self.regexs['openstack_match_regex'] = re.compile("^name")
 
         # Compile other regexs
-        for regular_expression in ['shorter_names_regex', 'host_match_regex', 'ignore_vm_match_regex']:
+        for regular_expression in ['shorter_names_regex', 'host_match_regex',
+                                   'ignore_vm_match_regex']:
             if self.exporterInfo.get(regular_expression):
                 self.regexs[regular_expression] = re.compile(
                     self.exporterInfo[regular_expression]
@@ -48,12 +49,13 @@ class Vccustomervmmetrics(VCExporter):
         logging.debug('list of all available metrics and their counterids')
         for vm_counter_id in vm_counter_ids:
 
-            full_name = '.'.join([vm_counter_id.groupInfo.key, vm_counter_id.nameInfo.key,
+            full_name = '.'.join([vm_counter_id.groupInfo.key,
+                                  vm_counter_id.nameInfo.key,
                                   vm_counter_id.rollupType])
             logging.debug(full_name + ": %s", str(vm_counter_id.key))
             self.counter_info[full_name] = vm_counter_id.key
-        
-                # get all the data regarding vcenter hosts
+
+        # get all the data regarding vcenter hosts
         self.host_view = content.viewManager.CreateContainerView(
             self.container, [vim.HostSystem], True)
 
@@ -67,7 +69,8 @@ class Vccustomervmmetrics(VCExporter):
 
         # Populate counter_ids_to_collect from config if specified
         if selected_metrics:
-            self.counter_ids_to_collect = [self.counter_info[i] for i in selected_metrics
+            self.counter_ids_to_collect = [self.counter_info[i] for i
+                                           in selected_metrics
                                            if i in self.counter_info]
         else:
             self.counter_ids_to_collect = [i.key for i in self.counter_info]
@@ -80,21 +83,26 @@ class Vccustomervmmetrics(VCExporter):
             ])
 
         self.counter_info_keys_list = list(self.counter_info.keys())
-        self.counter_info_keys_underscore = [x.replace('.', '_') for x in self.counter_info_keys_list]
+        self.counter_info_keys_underscore = [x.replace('.', '_')
+                                             for x in self.counter_info_keys_list]
         self.counter_info_values_list = list(self.counter_info.values())
 
     def collect(self):
-         # get data
-        self.data, self.mors = self.collect_properties(self.si, self.view_ref, vim.VirtualMachine,
-                                  self.vm_properties, True)
+        # get data
+        self.data, self.mors = self.collect_properties(self.si,
+                                                       self.view_ref,
+                                                       vim.VirtualMachine,
+                                                       self.vm_properties,
+                                                       True)
         self.metric_count = 0
- 
+
     def export(self):
         # define the time range in seconds the metric data from the vcenter
         #  should be averaged across all based on vcenter time
         vch_time = self.si.CurrentTime()
         start_time = vch_time - \
-            timedelta(seconds=(int(self.exporterInfo['collection_interval']) + 60))
+            timedelta(seconds=(int(self.exporterInfo['collection_interval'])
+                               + 60))
         end_time = vch_time - timedelta(seconds=60)
         perf_manager = self.si.content.perfManager
 
@@ -105,12 +113,12 @@ class Vccustomervmmetrics(VCExporter):
             perfQueries = []
             for item in group:
                 if (item["runtime.powerState"] == "poweredOn" and
-                            self.regexs['openstack_match_regex'].match(item["config.annotation"]) #and
-                            #'production' in item["runtime.host"].parent.name
-                            ) and not self.regexs['ignore_vm_match_regex'].match(item["config.name"]):
+                         self.regexs['openstack_match_regex'].match(item["config.annotation"])
+                         ) and not self.regexs['ignore_vm_match_regex'].match(item["config.name"]):
                     metric_ids = [
                             vim.PerformanceManager.MetricId(
-                                counterId=i, instance="*") for i in self.counter_ids_to_collect
+                                counterId=i, instance="*") for i
+                                in self.counter_ids_to_collect
                         ]
                     vm_instance = self.mors[item["obj"]]
                     spec = vim.PerformanceManager.QuerySpec(
@@ -132,19 +140,15 @@ class Vccustomervmmetrics(VCExporter):
 
             try:
                 if (item["runtime.powerState"] == "poweredOn" and
-                        self.regexs['openstack_match_regex'].match(item["config.annotation"]) #and
-                        #'production' in item["runtime.host"].parent.name
+                        self.regexs['openstack_match_regex'].match(item["config.annotation"])
                         ) and not self.regexs['ignore_vm_match_regex'].match(item["config.name"]):
                     logging.debug('current vm processed - ' +
-                                    item["config.name"])
-                    #logging.debug('==> running on vcenter node: ' +
-                    #                item["runtime.host"].name)
+                                  item["config.name"])
 
-                    # split the multi-line annotation into a dict
-                    # per property (name, project-id, ...)
                     annotation_lines = item["config.annotation"].split('\n')
 
-                    # rename flavor: to flavor_, so that it does not break the split on : below
+                    # rename flavor: to flavor_, so that it does not
+                    # break the split on : below
                     annotation_lines = [
                         w.replace('flavor:', 'flavor_')
                         for w in annotation_lines
@@ -156,36 +160,39 @@ class Vccustomervmmetrics(VCExporter):
                         for s in filter(None, annotation_lines))
 
                     # datastore name
-                    datastore = item["summary.config.vmPathName"].split('[', 1)[1].split(']')[
-                        0]
+                    datastore = item["summary.config.vmPathName"].split('[', 1)[1].split(']')[0]
 
                     vm_instance = self.mors[item["obj"]]
-                    
+
                     for val in queryDict[vm_instance].value:
 
                         # send gauges to prometheus exporter: metricname and value with
                         # labels: vm name, project id, vcenter name, vcneter
-                        # node, instance uuid and metric detail (for instance a partition
-                        # for io or an interface for net metrics) - we update the gauge
-                        # only if the value is not -1 which means the vcenter has no value
+                        # node, instance uuid and metric detail (for instance
+                        # a partition for io or an interface for net metrics)
+                        # - weupdate the gauge only if the value is not -1
+                        # which means the vcenter has no value
                         if val.value[0] != -1:
                             if val.id.instance == '':
                                 metric_detail = 'total'
                             else:
                                 metric_detail = val.id.instance
-                            
+
                             gauge_finder = self.counter_info_values_list.index(val.id.counterId)
                             gauge_title = self.counter_info_keys_underscore[gauge_finder]
                             gauge_title = 'vcenter_' + gauge_title
-                            gauge_title = re.sub('\.', '_', gauge_title )
-                            self.update_gauge(gauge_title, annotations, item, datastore, metric_detail, val.value[0])
-                             
+                            gauge_title = re.sub('\.', '_', gauge_title)
+                            self.update_gauge(gauge_title, annotations, item,
+                                              datastore, metric_detail,
+                                              val.value[0])
+
                     logging.debug('==> gauge loop end: %s' % datetime.now())
                     logging.debug("collected data for " + item['config.name'])
                 else:
-                    logging.debug("didn't collect info for " + item['config.name'] +
-                                " didn't meet requirements")
-            # some vms do not have config.name define - we are not interested in them and can ignore them
+                    logging.debug("didn't collect info for " + item['config.name']
+                                  + " didn't meet requirements")
+            # some vms do not have config.name define -
+            # we are not interested in them and can ignore them
             except KeyError as e:
                 logging.debug("property not defined for vm: " + str(e))
             except Exception as e:
