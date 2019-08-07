@@ -98,13 +98,11 @@ class Vccustomervmmetrics(VCExporter):
         end_time = vch_time - timedelta(seconds=60)
         perf_manager = self.si.content.perfManager
 
-
-
-        perfQueries = []
         queryResult = []
         queryDict = {}
 
         for group in self.chuncker(self.data, 50):
+            perfQueries = []
             for item in group:
                 if (item["runtime.powerState"] == "poweredOn" and
                             self.regexs['openstack_match_regex'].match(item["config.annotation"]) #and
@@ -124,10 +122,11 @@ class Vccustomervmmetrics(VCExporter):
                             endTime=end_time)
                     perfQueries.append(spec)
                     self.metric_count += 1
-            queryResult.append(perf_manager.QueryStats(querySpec=[spec]))
+            queryResult.append(perf_manager.QueryStats(querySpec=perfQueries))
 
-        for x in queryResult:
-            queryDict[x[0].entity] = x[0].value
+        for group in queryResult:
+            for vm in group:
+                queryDict[vm.entity] = vm
 
         for item in self.data:
 
@@ -162,7 +161,7 @@ class Vccustomervmmetrics(VCExporter):
 
                     vm_instance = self.mors[item["obj"]]
                     
-                    for val in queryDict[vm_instance]:
+                    for val in queryDict[vm_instance].value:
 
                         # send gauges to prometheus exporter: metricname and value with
                         # labels: vm name, project id, vcenter name, vcneter
