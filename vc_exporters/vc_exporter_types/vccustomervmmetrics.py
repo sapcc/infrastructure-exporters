@@ -112,8 +112,6 @@ class Vccustomervmmetrics(VCExporter):
         queryDict = {}
 
         for group in self.chuncker(self.data, 50):
-            if len(group) == 0:
-                continue
             perfQueries = []
             for item in group:
                 if (item["runtime.powerState"] == "poweredOn" and
@@ -134,7 +132,8 @@ class Vccustomervmmetrics(VCExporter):
                             endTime=end_time)
                     perfQueries.append(spec)
                     self.metric_count += 1
-            queryResult.append(perf_manager.QueryStats(querySpec=perfQueries))
+            if len(perfQueries) > 0:
+                queryResult.append(perf_manager.QueryStats(querySpec=perfQueries))
 
         for group in queryResult:
             for vm in group:
