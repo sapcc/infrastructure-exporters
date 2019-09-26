@@ -47,7 +47,7 @@ class Apichealth(Apicexporter):
             
             physIfUrl = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/ethpmPhysIf.json?"
             physIfInfo = self.apicGetRequest(physIfUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'],apicHost)
-            if self.apicHosts[apicHost]['status_code'] == 200 and physIfInfo != None:
+            if self.apicHosts[apicHost]['status_code'] == 200 and isinstance(physIfInfo['imdata'], list):
                 for physIf in physIfInfo['imdata']:
                     resetCtr = physIf['ethpmPhysIf']['attributes']['resetCtr']
                     physIfDN = physIf['ethpmPhysIf']['attributes']['dn']
