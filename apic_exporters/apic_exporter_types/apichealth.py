@@ -51,8 +51,9 @@ class Apichealth(Apicexporter):
                 for physIf in physIfInfo['imdata']:
                     resetCtr = physIf['ethpmPhysIf']['attributes']['resetCtr']
                     physIfDN = physIf['ethpmPhysIf']['attributes']['dn']
-                    self.apicHosts[apicHost]['physIf'].append({'dn':physIfDN, 'resetCtr':resetCtr, 'status_code':200})
-                    self.metric_count += 1
+                    if int(resetCtr) > 0:
+                        self.apicHosts[apicHost]['physIf'].append({'dn':physIfDN, 'resetCtr':resetCtr, 'status_code':200})
+                        self.metric_count += 1
 
             duplicateIpsUrl = 'https://' + self.apicHosts[apicHost]['name'] + '/api/node/class/fvIp.json?rsp-subtree=full&'
             duplicateIpsUrl += 'rsp-subtree-class=fvReportingNode&query-target-filter=and(ne(fvIp.debugMACMessage,""))'
