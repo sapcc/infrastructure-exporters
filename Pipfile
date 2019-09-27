@@ -7,6 +7,8 @@ name = "pypi"
 yamlconfig = "*"
 prometheus_client = "*"
 pyvmomi = "*"
+urllib3 = "*"
+pyyaml = "*"
 
 [dev-packages]
 
