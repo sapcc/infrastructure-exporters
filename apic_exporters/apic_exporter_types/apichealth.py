@@ -57,7 +57,7 @@ class Apichealth(Apicexporter):
             duplicateIpsUrl = 'https://' + self.apicHosts[apicHost]['name'] + '/api/node/class/fvIp.json?rsp-subtree=full&'
             duplicateIpsUrl += 'rsp-subtree-class=fvReportingNode&query-target-filter=and(ne(fvIp.debugMACMessage,""))'
             duplicateIpsInfo = self.apicGetRequest(duplicateIpsUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'],apicHost)
-            if self.apicHosts[apicHost]['status_code'] == 200 and duplicateIpsInfo != None and int(duplicateIpsInfo['totalCount']) > 0:
+            if self.apicHosts[apicHost]['status_code'] == 200 and isinstance(duplicateIpsInfo, dict) and duplicateIpsInfo is not None and int(duplicateIpsInfo.get('totalCount')) > 0:
                 for duplicateIp in duplicateIpsInfo['imdata']:
                     ipAddres = duplicateIp['fvIp']['attributes']['addr']
                     ipMac = re.search(r"([0-9A-F]{2}:){5}[0-9A-F]{2}", duplicateIp['fvIp']['attributes']['dn']).group()
