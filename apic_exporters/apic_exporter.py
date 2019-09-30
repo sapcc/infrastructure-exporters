@@ -55,13 +55,24 @@ class Apicexporter(exporter.Exporter):
         try:
             r = requests.get(url, cookies=cookie, proxies=proxies, verify=False, timeout=15)
         except Exception as e:
-            logging.error("Problem getting cookie for apic at " + apicHost)
+            logging.error("Problem getting metrics for apic at " + apicHost)
             self.apicHosts[apicHost]['status_code'] = 0
             return None
 
-
         if r.status_code == 403 and "Token was invalid" in r.text:
-            return "Renew Token"
+            apicCookie = self.getApicCookie(apicHost,
+                                            self.apicInfo['username'],
+                                            self.apicInfo['password'],
+                                            self.apicInfo['proxy'])
+            self.apicHosts[apicHost]['loginCookie'] = apicCookie
+
+        try:
+            r = requests.get(url, cookies=cookie, proxies=proxies, verify=False, timeout=15)
+        except Exception as e:
+            logging.error("Problem getting metrics for apic at " + apicHost)
+            self.apicHosts[apicHost]['status_code'] = 0
+            return None
+        
         if r.status_code != 200:
             logging.info("Unable to get data from URL: " + url)
             self.apicHosts[apicHost]['status_code'] = 0
