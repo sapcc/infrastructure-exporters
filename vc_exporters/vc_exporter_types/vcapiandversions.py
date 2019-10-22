@@ -30,18 +30,29 @@ class Vcapiandversions(VCExporter):
                                                                 'vcenter_vcenter_api_active_count',
                                                                 ['hostname'])
 
+        self.gauge['vcenter_vcenter_vms_on_failover_hosts'] = Gauge('venter_vcenter_vms_on_failover_hosts',
+                                                                'Count of VMs placed on failover hosts, they shouldn\'t be there',
+                                                                ['hostname','cluster'])
+
+        self.gauge['vcenter_vcenter_failover_host'] = Gauge('vcenter_vcenter_failover_host',
+                                                        'Count of failover hosts in prod clusters',
+                                                        ['hostname','cluster'])
+
         self.content = self.si.RetrieveContent()
+        #never used?
         self.clusters = [cluster for cluster in
                          self.content.viewManager.CreateContainerView(
                              self.content.rootFolder, [vim.ComputeResource],
                              recursive=True).view
                          ]
+
         self.hosts = self.si.content.viewManager.CreateContainerView(
             container=self.content.rootFolder,
             type=[vim.HostSystem],
             recursive=True
         )
-        
+
+
     def collect(self):
         region = self.vcenterInfo['hostname'].split('.')[2]
         self.metric_count = 0
@@ -70,6 +81,7 @@ class Vcapiandversions(VCExporter):
         host_data, mors = self.collect_properties(self.si, self.hosts,
                                     vim.HostSystem, self.host_properties, True)
         for host in host_data:
+            # print(host)
             try:
                 logging.debug(host['summary.config.name'] + ": " +
                                 host['config.product.version'])
@@ -81,6 +93,31 @@ class Vcapiandversions(VCExporter):
             except Exception as e:
                 logging.debug(
                     "Couldn't get information for a host: " + str(e))
+
+
+        collected_spare_hosts = dict()
+        for cluster in self.clusters:
+            if "prod" in cluster.name:
+                if cluster.configuration.dasConfig.admissionControlEnabled \
+                    and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel == 1 \
+                    and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) == 1:
+                    for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
+                        if cluster.name in collected_spare_hosts.keys():
+                            #add another element if we have this cluster and more than one spare
+                            collected_spare_hosts[cluster.name].append({'name' : host.name, 'vms' : len(host.vm)})
+                        else:
+                            collected_spare_hosts[cluster.name] = [{ 'name': host.name, 'vms': len(host.vm)}]
+
+        for clustername in collected_spare_hosts.keys():
+            count_vms = 0
+            count_failoverhosts = 0
+            for pair in collected_spare_hosts[clustername]:
+                count_vms += pair['vms']
+                count_failoverhosts += 1
+            self.gauge['vcenter_vcenter_vms_on_failover_hosts'].labels(self.vcenterInfo['hostname'],clustername).set(count_vms)
+            # self.gauge['vcenter_vcenter_vms_on_failover_hosts'].labels(self.vcenterInfo['hostname'],clustername,pair['name']).set(count_vms)
+            self.gauge['vcenter_vcenter_failover_host'].labels(self.vcenterInfo['hostname'],clustername).set(count_failoverhosts)
+            self.metric_count += 2
 
         # Get current session information and check with saved sessions info
         logging.debug('getting api session information')
@@ -135,4 +172,4 @@ class Vcapiandversions(VCExporter):
 
         self.gauge['vcenter_vcenter_api_active_count'].labels(self.vcenterInfo['hostname']).set(
             len(self.current_sessions)
-        )  
+        )
