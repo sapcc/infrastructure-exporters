@@ -48,13 +48,11 @@ class Vcapiandversions(VCExporter):
                              self.content.rootFolder, [vim.ComputeResource],
                              recursive=True).view
                          ]
-
         self.hosts = self.si.content.viewManager.CreateContainerView(
             container=self.content.rootFolder,
             type=[vim.HostSystem],
             recursive=True
         )
-
 
     def collect(self):
         region = self.vcenterInfo['hostname'].split('.')[2]
@@ -84,7 +82,6 @@ class Vcapiandversions(VCExporter):
         host_data, mors = self.collect_properties(self.si, self.hosts,
                                     vim.HostSystem, self.host_properties, True)
         for host in host_data:
-            # print(host)
             try:
                 logging.debug(host['summary.config.name'] + ": " +
                                 host['config.product.version'])
@@ -96,7 +93,6 @@ class Vcapiandversions(VCExporter):
             except Exception as e:
                 logging.debug(
                     "Couldn't get information for a host: " + str(e))
-
 
         collected_spare_hosts = dict()
         cluster_count = 0
