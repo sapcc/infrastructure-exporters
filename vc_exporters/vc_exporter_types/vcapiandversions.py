@@ -104,11 +104,21 @@ class Vcapiandversions(VCExporter):
                         and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel == 1 \
                         and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) == 1:
                         for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
+                            vms = list()
+                            for vm in host.vm:
+                                if not vm.config.template:
+                                    vms.append(vm)
+                                else:
+                                    logging.debug("Ignoring template only VM " + vm.name + " on " + host.name)
+                                    continue
                             if cluster.name in collected_spare_hosts.keys():
                                 #add another element if we have this cluster and more than one spare
-                                collected_spare_hosts[cluster.name].append({'name' : host.name, 'vms' : len(host.vm)})
+                                collected_spare_hosts[cluster.name].append({'name' : host.name, 'vms' : len(vms)})
+                                logging.info(cluster.name + ": " + host.name + ": " + str(vms))
                             else:
-                                collected_spare_hosts[cluster.name] = [{ 'name': host.name, 'vms': len(host.vm)}]
+                                collected_spare_hosts[cluster.name] = [{ 'name': host.name, 'vms': len(vms)}]
+                                if len(vms):
+                                    logging.info(cluster.name + ": " + host.name + ": " + str(vms))
                 except Exception as e:
                     logging.debug(
                             cluster.name + ": AdmissionControlPolicy not properly configured, bailing out" + str(e))
