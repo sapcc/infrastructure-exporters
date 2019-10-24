@@ -42,6 +42,10 @@ class Vcapiandversions(VCExporter):
                                                     'Count of prod cluster in a vcenter',
                                                     ['hostname'])
 
+        self.gauge['vcenter_failover_nodes_set'] = Gauge('vcenter_failover_nodes_set',
+                                                    'Count of configured failover nodes in the cluster',
+                                                    ['hostname', 'cluster'])
+
         self.content = self.si.RetrieveContent()
         self.clusters = [cluster for cluster in
                          self.content.viewManager.CreateContainerView(
@@ -96,21 +100,28 @@ class Vcapiandversions(VCExporter):
 
         collected_spare_hosts = dict()
         cluster_count = 0
+        failoverLevel = dict()
         for cluster in self.clusters:
             if "prod" in cluster.name:
                 cluster_count += 1
                 try:
                     if cluster.configuration.dasConfig.admissionControlEnabled \
-                        and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel == 1 \
+                        and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel >= 1 \
                         and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) == 1:
+
+                        failoverLevel[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel
                         for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
                             if host.runtime.connectionState == 'notResponding':
                                 logging.info("HA Host " + host.name + " " + cluster.name + " not responding; skipping")
                                 continue
                             vms = list()
                             for vm in host.vm:
-                                if not vm.config.template:
+                                if vm.config is None:
                                     vms.append(vm)
+                                    logging.debug("Leftover corpsed VM " + vm.name + " on " + host.name + " " + cluster.name + " should not be there")
+                                elif not vm.config.template:
+                                    vms.append(vm)
+                                    logging.debug("VM " + vm.name + " on " + host.name + " " + cluster.name + " should not be there")
                                 else:
                                     logging.debug("Ignoring template only VM " + vm.name + " on " + host.name)
                                     continue
@@ -139,6 +150,9 @@ class Vcapiandversions(VCExporter):
             self.metric_count += 1
 
         self.gauge['vcenter_prod_cluster'].labels(self.vcenterInfo['hostname']).set(cluster_count)
+
+        for clustername in failoverLevel.keys():
+            self.gauge['vcenter_failover_nodes_set'].labels(self.vcenterInfo['hostname'],clustername).set(failoverLevel[clustername])
 
         # Get current session information and check with saved sessions info
         logging.debug('getting api session information')
