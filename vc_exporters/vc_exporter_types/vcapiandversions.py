@@ -104,6 +104,9 @@ class Vcapiandversions(VCExporter):
                         and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel == 1 \
                         and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) == 1:
                         for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
+                            if host.runtime.connectionState == 'notResponding':
+                                logging.debug("HA Host " + host.name + " not responding; skipping")
+                                continue
                             vms = list()
                             for vm in host.vm:
                                 if not vm.config.template:
