@@ -98,61 +98,7 @@ class Vcapiandversions(VCExporter):
                 logging.debug(
                     "Couldn't get information for a host: " + str(e))
 
-        collected_spare_hosts = dict()
-        cluster_count = 0
-        failoverLevel = dict()
-        for cluster in self.clusters:
-            if "prod" in cluster.name:
-                cluster_count += 1
-                try:
-                    if cluster.configuration.dasConfig.admissionControlEnabled \
-                        and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel >= 1 \
-                        and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) == 1:
-
-                        failoverLevel[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel
-                        for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
-                            if host.runtime.connectionState == 'notResponding':
-                                logging.info("HA Host " + host.name + " " + cluster.name + " not responding; skipping")
-                                continue
-                            vms = list()
-                            for vm in host.vm:
-                                if vm.config is None:
-                                    vms.append(vm)
-                                    logging.debug("Leftover corpsed VM " + vm.name + " on " + host.name + " " + cluster.name + " should not be there")
-                                elif not vm.config.template:
-                                    vms.append(vm)
-                                    logging.debug("VM " + vm.name + " on " + host.name + " " + cluster.name + " should not be there")
-                                else:
-                                    logging.debug("Ignoring template only VM " + vm.name + " on " + host.name)
-                                    continue
-                            if cluster.name in collected_spare_hosts.keys():
-                                #add another element if we have this cluster and more than one spare
-                                collected_spare_hosts[cluster.name].append({'name' : host.name, 'vms' : len(vms)})
-                                logging.info(cluster.name + ": " + host.name + ": " + str(vms))
-                            else:
-                                collected_spare_hosts[cluster.name] = [{ 'name': host.name, 'vms': len(vms)}]
-                                if len(vms):
-                                    logging.info(cluster.name + ": " + host.name + ": " + str(vms))
-                except Exception as e:
-                    logging.debug(
-                            cluster.name + ": AdmissionControlPolicy not properly configured, bailing out" + str(e))
-                    import traceback
-                    traceback.print_exc()
-
-        for clustername in collected_spare_hosts.keys():
-            count_vms = 0
-            count_failoverhosts = 0
-            for pair in collected_spare_hosts[clustername]:
-                self.gauge['vcenter_vms_on_failover_hosts'].labels(self.vcenterInfo['hostname'],clustername,pair['name']).set(pair['vms'])
-                count_failoverhosts += 1
-                self.metric_count += 1
-            self.gauge['vcenter_failover_host'].labels(self.vcenterInfo['hostname'],clustername).set(count_failoverhosts)
-            self.metric_count += 1
-
-        self.gauge['vcenter_prod_cluster'].labels(self.vcenterInfo['hostname']).set(cluster_count)
-
-        for clustername in failoverLevel.keys():
-            self.gauge['vcenter_failover_nodes_set'].labels(self.vcenterInfo['hostname'],clustername).set(failoverLevel[clustername])
+        self.do_failover_metrics()
 
         # Get current session information and check with saved sessions info
         logging.debug('getting api session information')
@@ -208,3 +154,62 @@ class Vcapiandversions(VCExporter):
         self.gauge['vcenter_vcenter_api_active_count'].labels(self.vcenterInfo['hostname']).set(
             len(self.current_sessions)
         )
+
+    def do_failover_metrics(self):
+        collected_spare_hosts = dict()
+        cluster_count = 0
+        failoverLevel = dict()
+        for cluster in self.clusters:
+            if "prod" in cluster.name:
+                cluster_count += 1
+                try:
+                    if cluster.configuration.dasConfig.admissionControlEnabled \
+                        and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel >= 1 \
+                        and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) == 1:
+
+                        failoverLevel[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel
+                        for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
+                            if host.runtime.connectionState == 'notResponding':
+                                logging.info("HA Host " + host.name + " " + cluster.name + " not responding; skipping")
+                                continue
+                            vms = list()
+                            for vm in host.vm:
+                                if vm.config is None:
+                                    vms.append(vm)
+                                    logging.debug("Leftover corpsed VM " + vm.name + " on " + host.name + " " + cluster.name + " should not be there")
+                                elif not vm.config.template:
+                                    vms.append(vm)
+                                    logging.debug("VM " + vm.name + " on " + host.name + " " + cluster.name + " should not be there")
+                                else:
+                                    logging.debug("Ignoring template only VM " + vm.name + " on " + host.name)
+                                    continue
+                            if cluster.name in collected_spare_hosts.keys():
+                                #add another element if we have this cluster and more than one spare
+                                collected_spare_hosts[cluster.name].append({'name' : host.name, 'vms' : len(vms)})
+                                logging.info(cluster.name + ": " + host.name + ": " + str(vms))
+                            else:
+                                collected_spare_hosts[cluster.name] = [{ 'name': host.name, 'vms': len(vms)}]
+                                if len(vms):
+                                    logging.info(cluster.name + ": " + host.name + ": " + str(vms))
+                except Exception as e:
+                    logging.debug(
+                            cluster.name + ": AdmissionControlPolicy not properly configured, bailing out" + str(e))
+                    import traceback
+                    traceback.print_exc()
+
+        for clustername in collected_spare_hosts.keys():
+            count_vms = 0
+            count_failoverhosts = 0
+            for pair in collected_spare_hosts[clustername]:
+                self.gauge['vcenter_vms_on_failover_hosts'].labels(self.vcenterInfo['hostname'],clustername,pair['name']).set(pair['vms'])
+                count_failoverhosts += 1
+                self.metric_count += 1
+            self.gauge['vcenter_failover_host'].labels(self.vcenterInfo['hostname'],clustername).set(count_failoverhosts)
+            self.metric_count += 1
+
+        self.gauge['vcenter_prod_cluster'].labels(self.vcenterInfo['hostname']).set(cluster_count)
+        self.metric_count += 1
+
+        for clustername in failoverLevel.keys():
+            self.gauge['vcenter_failover_nodes_set'].labels(self.vcenterInfo['hostname'],clustername).set(failoverLevel[clustername])
+            self.metric_count += 1
