@@ -85,9 +85,8 @@ class Vcapiandversions(VCExporter):
             self.counter_ids_to_collect = [i.key for i in self.counter_info]
 
         for counter_id in selected_metrics:
-            vc_gauge = 'vcenter_esxi_' + counter_id.replace('.', '_')
-            self.gauge[vc_gauge] = Gauge(vc_gauge, vc_gauge, [
-                'hostname', 'esxi_host', 'metric_detail' ])
+            vc_gauge = 'vcenter_' + counter_id.replace('.', '_')
+            self.gauge[vc_gauge] = Gauge(vc_gauge, vc_gauge, [ 'hostname', 'esxi_host', 'metric_detail' ])
 
         self.counter_info_keys_list = list(self.counter_info.keys())
         self.counter_info_keys_underscore = [x.replace('.', '_')
@@ -252,7 +251,7 @@ class Vcapiandversions(VCExporter):
 
                         gauge_finder = self.counter_info_values_list.index(val.id.counterId)
                         gauge_title = self.counter_info_keys_underscore[gauge_finder]
-                        gauge_title = 'vcenter_esxi_' + gauge_title
+                        gauge_title = 'vcenter_' + gauge_title
                         gauge_title = re.sub('\.', '_', gauge_title)
                         try:
                             self.update_gauge(gauge_title,
