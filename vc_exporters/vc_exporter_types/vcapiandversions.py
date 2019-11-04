@@ -88,9 +88,15 @@ class Vcapiandversions(VCExporter):
         for counter_id in selected_metrics:
             # vc_gauge = 'vcenter_' + counter_id.replace('.', '_')
             print("hallo2")
+            print(counter_id)
+            print(selected_metrics)
             print(counter_id.replace('.', '_'))
-            vc_gauge = 'vcenter_' + counter_id.replace('.', '_')
-            self.gauge[vc_gauge] = Gauge(vc_gauge, vc_gauge, [ 'hostname', 'esxi_host', 'metric_detail' ])
+            try:
+                vc_gauge = 'vcenter_' + counter_id.replace('.', '_')
+                self.gauge[vc_gauge] = Gauge(vc_gauge, vc_gauge, [ 'hostname', 'esxi_host', 'metric_detail' ])
+            except Exception as e:
+                print("Failed to set gauge for value 'vcenter_'" +  counter_id.replace('.', '_'))
+                
 
         self.counter_info_keys_list = list(self.counter_info.keys())
         self.counter_info_keys_underscore = [x.replace('.', '_')
