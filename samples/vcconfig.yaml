@@ -12,7 +12,7 @@ exporter_types:
     collection_interval: 120
     prometheus_port: 9102
     hv_metrics:
-    - 'mem.swapused.average'
+      - 'mem.swapused.average'
   vccustomerdsmetrics:
     name: vccustomerdsmetrics
     enabled: True
