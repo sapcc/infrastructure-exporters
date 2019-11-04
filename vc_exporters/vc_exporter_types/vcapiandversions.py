@@ -137,6 +137,7 @@ class Vcapiandversions(VCExporter):
 
         self.do_failover_metrics()
 
+
         # Get current session information and check with saved sessions info
         logging.debug('getting api session information')
 
