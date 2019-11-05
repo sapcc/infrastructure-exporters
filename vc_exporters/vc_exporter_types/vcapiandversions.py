@@ -289,6 +289,7 @@ class Vcapiandversions(VCExporter):
         collected_spare_hosts = dict()
         cluster_count = 0
         failoverLevel = dict()
+        failoverHosts = dict()
         for cluster in self.clusters:
             if "prod" in cluster.name:
                 cluster_count += 1
@@ -298,21 +299,33 @@ class Vcapiandversions(VCExporter):
                         and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) == 1:
 
                         failoverLevel[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel
+                        failoverHosts[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts
+
+                        logging.debug("cluster: %s failoverLevel: %s failoverHosts: %s", cluster.name, failoverLevel[cluster.name], len(failoverHosts[cluster.name]))
+
                         for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
+                            logging.debug("cluster: %s failoverHost: %s", cluster.name, host.name)
                             if host.runtime.connectionState == 'notResponding':
-                                logging.info("HA Host " + host.name + " " + cluster.name + " not responding; skipping")
+                                logging.info("cluster: %s, HA Host: %s not responding. Skipping", cluster.name, host.name)
                                 continue
                             vms = list()
                             for vm in host.vm:
                                 if vm.config is None:
-                                    vms.append(vm)
-                                    logging.debug("Leftover corpsed VM " + vm.name + " on " + host.name + " " + cluster.name + " should not be there")
-                                elif not vm.config.template:
-                                    vms.append(vm)
-                                    logging.debug("VM " + vm.name + " on " + host.name + " " + cluster.name + " should not be there")
-                                else:
-                                    logging.debug("Ignoring template only VM " + vm.name + " on " + host.name)
+                                    # VM does not have a configuration.
+                                    logging.debug("cluster: %s host: %s - Leftover corpsed VM %s should not be there", cluster.name, host.name, vm.name)
                                     continue
+                                elif vm.config.template:
+                                    # VM is a template
+                                    logging.debug("cluster: %s host %s - Ignoring VM template %s", cluster.name, host.name, vm.name)
+                                    continue
+                                elif vm.config.managedBy.type == 'volume':
+                                    # VM is a shadow VM representing a Cinder volume
+                                    logging.debug("cluster %s host %s - Ignoring shadow VM %s of type %s managed by %s", cluster.name, host.name, vm.name, vm.config.managedBy.type, vm.config.managedBy.extensionKey)
+                                    continue
+                                else:
+                                    # A real VM which should not be on a HA host
+                                    vms.append(vm)
+                                    logging.info("cluster %s host %s - VM %s should not be there", cluster.name, host.name, vm.name)
                             if cluster.name in collected_spare_hosts.keys():
                                 #add another element if we have this cluster and more than one spare
                                 collected_spare_hosts[cluster.name].append({'name' : host.name, 'vms' : len(vms)})
@@ -323,9 +336,7 @@ class Vcapiandversions(VCExporter):
                                     logging.info(cluster.name + ": " + host.name + ": " + str(vms))
                 except Exception as e:
                     logging.debug(
-                            cluster.name + ": AdmissionControlPolicy not properly configured, bailing out" + str(e))
-                    import traceback
-                    traceback.print_exc()
+                            cluster.name + ": AdmissionControlPolicy not properly configured, bailing out " + str(e))
 
         for clustername in collected_spare_hosts.keys():
             count_vms = 0
