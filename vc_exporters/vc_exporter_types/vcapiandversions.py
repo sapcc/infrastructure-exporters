@@ -23,6 +23,9 @@ class Vcapiandversions(VCExporter):
                                                     'vcenter_esx_node_info',
                                                     ['hostname',
                                                      'version', 'build', 'region'])
+        self.gauge['vcenter_esx_node_maintenance'] = Gauge('vcenter_esx_node_maintenance',
+                                                    'vcenter_esx_node_maintenance',
+                                                    ['hostname'])
         self.gauge['vcenter_vcenter_node_info'] = Gauge('vcenter_vcenter_node_info',
                                                         'vcenter_vcenter_node_info',
                                                         ['hostname',
@@ -131,12 +134,21 @@ class Vcapiandversions(VCExporter):
                                                             host['config.product.build'], region).set(1)
                 self.metric_count += 1
 
+
             except Exception as e:
                 logging.debug(
                     "Couldn't get information for a host: " + str(e))
+            try:
+                if self.mors[host['obj']].runtime.inMaintenanceMode:
+                    self.gauge['vcenter_esx_node_maintenance'].labels(host['summary.config.name']).set(1)
+                else:
+                    self.gauge['vcenter_esx_node_maintenance'].labels(host['summary.config.name']).set(0)
+                self.metric_count += 1
+            except Exception as e:
+                logging.debug(
+                    "Couldn't get maintenance state for host: " + host['summary.config.name'] + " " + str(e))
 
         self.do_failover_metrics()
-
 
         # Get current session information and check with saved sessions info
         logging.debug('getting api session information')
