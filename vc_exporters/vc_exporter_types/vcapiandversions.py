@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import re
 import socket
 import errno
+from threading import Thread
+from threading import Semaphore
 
 class Vcapiandversions(VCExporter):
     
@@ -17,7 +19,7 @@ class Vcapiandversions(VCExporter):
         self.host_properties =[
             "summary.config.name", "config.product.version",
             "config.product.build", "summary.quickStats.overallMemoryUsage",
-            "hardware.memorySize"
+            "hardware.memorySize","vm"
         ]
         self.gauge['vcenter_esx_node_info'] = Gauge('vcenter_esx_node_info',
                                                     'vcenter_esx_node_info',
@@ -55,6 +57,9 @@ class Vcapiandversions(VCExporter):
                                                     'Count of configured failover nodes in the cluster',
                                                     ['hostname', 'cluster'])
 
+        self.gauge['vcenter_overbooked_node'] = Gauge('vcenter_overbooked_node',
+                                                    'Node where memory of big VMs exceeds physical memory',
+                                                    ['hostname', 'node'])
 
         self.content = self.si.RetrieveContent()
         self.clusters = [cluster for cluster in
@@ -148,6 +153,7 @@ class Vcapiandversions(VCExporter):
                 logging.debug(
                     "Couldn't get maintenance state for host: " + host['summary.config.name'] + " " + str(e))
 
+        self.manage_ram_counting()
         self.do_failover_metrics()
 
         # Get current session information and check with saved sessions info
@@ -366,3 +372,46 @@ class Vcapiandversions(VCExporter):
         for clustername in failoverLevel.keys():
             self.gauge['vcenter_failover_nodes_set'].labels(self.vcenterInfo['hostname'],clustername).set(failoverLevel[clustername])
             self.metric_count += 1
+
+
+    def manage_ram_counting(self):
+        self.sick_ram_hosts = list()
+        self.healthy_ram_hosts = list()
+        threads = list()
+
+        #we better don't put too much load on it
+        semaphore = Semaphore(12)
+        for host in self.host_data:
+            thread = Thread(target=self.count_host_big_vms,args=(host,semaphore,))
+            threads.append(thread)
+            thread.start()
+
+        for t in threads:
+            t.join()
+        for host in self.sick_ram_hosts:
+            self.gauge['vcenter_overbooked_node'].labels(self.vcenterInfo['hostname'],host['summary.config.name']).set(1)
+        for host in self.healthy_ram_hosts:
+            self.gauge['vcenter_overbooked_node'].labels(self.vcenterInfo['hostname'],host['summary.config.name']).set(0)
+
+
+    def count_host_big_vms(self, host, semaphore):
+        semaphore.acquire()
+        logging.debug("looking into " + host['summary.config.name'])
+        host_memory_mb = host["hardware.memorySize"] / 1024 / 1024
+        host_vms_sum_mb = 0
+        for vm in host['vm']:
+            # we only want vms > 256GB
+            try:
+                if hasattr(vm.summary.config, 'memorySizeMB'):
+                    if vm.summary.config.memorySizeMB:
+                        if vm.summary.config.memorySizeMB >= 262144:
+                            host_vms_sum_mb += vm.summary.config.memorySizeMB
+            except Exception as e:
+                #for now i want to see it regardless of logging
+                print("probably deleted VM found, ignoring: " + str(e))
+        if host_vms_sum_mb >= host_memory_mb:
+            logging.debug("found overbooked hv: " + host['summary.config.name'])
+            self.sick_ram_hosts.append(host)
+        else:
+            self.healthy_ram_hosts.append(host)
+        semaphore.release()
