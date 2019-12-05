@@ -11,7 +11,8 @@ from threading import Thread
 from threading import Semaphore
 
 class Vcapiandversions(VCExporter):
-    
+    MEM_THRESHOLD = 1024   # in MB, used for offset of flavours and hv physical memory
+
     def __init__(self, exporterType, exporterConfig):
         super().__init__(exporterType, exporterConfig)
         self.gauge = {}
@@ -57,8 +58,8 @@ class Vcapiandversions(VCExporter):
                                                     'Count of configured failover nodes in the cluster',
                                                     ['hostname', 'cluster'])
 
-        self.gauge['vcenter_overbooked_node'] = Gauge('vcenter_overbooked_node',
-                                                    'Node where memory of big VMs exceeds physical memory',
+        self.gauge['vcenter_overbooked_node_mb'] = Gauge('vcenter_overbooked_node_mb',
+                                                    'Node where memory of big VMs exceeds physical memory in MB',
                                                     ['hostname', 'node'])
 
         self.content = self.si.RetrieveContent()
@@ -279,7 +280,7 @@ class Vcapiandversions(VCExporter):
                                               metric_detail,
                                               val.value[0])
                         except socket.error as e:
-                            if e.errno != erno.EPIPE:
+                            if e.errno != errno.EPIPE:
                                 raise
                             logging.info("Brokent pipe updating gauge")
                         except Exception as e:
@@ -375,43 +376,35 @@ class Vcapiandversions(VCExporter):
 
 
     def manage_ram_counting(self):
-        self.sick_ram_hosts = list()
-        self.healthy_ram_hosts = list()
         threads = list()
-
         #we better don't put too much load on it
         semaphore = Semaphore(12)
         for host in self.host_data:
             thread = Thread(target=self.count_host_big_vms,args=(host,semaphore,))
             threads.append(thread)
             thread.start()
-
         for t in threads:
             t.join()
-        for host in self.sick_ram_hosts:
-            self.gauge['vcenter_overbooked_node'].labels(self.vcenterInfo['hostname'],host['summary.config.name']).set(1)
-        for host in self.healthy_ram_hosts:
-            self.gauge['vcenter_overbooked_node'].labels(self.vcenterInfo['hostname'],host['summary.config.name']).set(0)
-
 
     def count_host_big_vms(self, host, semaphore):
         semaphore.acquire()
-        logging.debug("looking into " + host['summary.config.name'])
+        # logging.debug("looking into " + host['summary.config.name'])
         host_memory_mb = host["hardware.memorySize"] / 1024 / 1024
         host_vms_sum_mb = 0
         for vm in host['vm']:
             # we only want vms > 256GB
             try:
-                if hasattr(vm.summary.config, 'memorySizeMB'):
-                    if vm.summary.config.memorySizeMB:
+                if hasattr(vm.summary.config, 'memorySizeMB') and hasattr(vm.runtime, 'powerState'):
+                    if vm.summary.config.memorySizeMB and vm.runtime.powerState == 'poweredOn':
                         if vm.summary.config.memorySizeMB >= 262144:
                             host_vms_sum_mb += vm.summary.config.memorySizeMB
             except Exception as e:
                 #for now i want to see it regardless of logging
                 print("probably deleted VM found, ignoring: " + str(e))
-        if host_vms_sum_mb >= host_memory_mb:
-            logging.debug("found overbooked hv: " + host['summary.config.name'])
-            self.sick_ram_hosts.append(host)
+        diff_mb = host_vms_sum_mb - host_memory_mb
+        if diff_mb > self.MEM_THRESHOLD:
+            logging.debug("found overbooked hv: " + host['summary.config.name'] + " host memory: " + str(host_memory_mb) + " vms: " + str(host_vms_sum_mb))
+            self.gauge['vcenter_overbooked_node_mb'].labels(self.vcenterInfo['hostname'],host['summary.config.name']).set(int(diff_mb))
         else:
-            self.healthy_ram_hosts.append(host)
+            self.gauge['vcenter_overbooked_node_mb'].labels(self.vcenterInfo['hostname'],host['summary.config.name']).set(0)
         semaphore.release()
