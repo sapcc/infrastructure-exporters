@@ -62,6 +62,10 @@ class Vcapiandversions(VCExporter):
                                                     'Node where memory of big VMs exceeds physical memory in MB',
                                                     ['hostname', 'node'])
 
+        self.gauge['vcenter_cluster_ha_configured'] = Gauge('vcenter_cluster_ha_configured',
+                                                    'Cluster with correct HA policy set',
+                                                    ['hostname', 'cluster'])
+
         self.content = self.si.RetrieveContent()
         self.clusters = [cluster for cluster in
                          self.content.viewManager.CreateContainerView(
@@ -319,8 +323,9 @@ class Vcapiandversions(VCExporter):
 
                         failoverLevel[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel
                         failoverHosts[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts
-
                         logging.debug("cluster: %s failoverLevel: %s failoverHosts: %s", cluster.name, failoverLevel[cluster.name], len(failoverHosts[cluster.name]))
+
+                        self.gauge['vcenter_cluster_ha_configured'].labels(self.vcenterInfo['hostname'],cluster.name).set(1)
 
                         for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
                             logging.debug("cluster: %s failoverHost: %s", cluster.name, host.name)
@@ -353,6 +358,9 @@ class Vcapiandversions(VCExporter):
                                 collected_spare_hosts[cluster.name] = [{ 'name': host.name, 'vms': len(vms)}]
                                 if len(vms):
                                     logging.info(cluster.name + ": " + host.name + ": " + str(vms))
+                    else:
+                        self.gauge['vcenter_cluster_ha_configured'].labels(self.vcenterInfo['hostname'],cluster.name).set(0)
+
                 except Exception as e:
                     logging.debug(
                             cluster.name + ": AdmissionControlPolicy not properly configured, bailing out " + str(e))
