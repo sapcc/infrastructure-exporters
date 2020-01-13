@@ -316,6 +316,7 @@ class Vcapiandversions(VCExporter):
         for cluster in self.clusters:
             if "prod" in cluster.name:
                 cluster_count += 1
+                self.gauge['vcenter_cluster_ha_configured'].labels(self.vcenterInfo['hostname'],cluster.name).set(0)
                 try:
                     if cluster.configuration.dasConfig.admissionControlEnabled \
                         and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel >= 1 \
@@ -358,8 +359,6 @@ class Vcapiandversions(VCExporter):
                                 collected_spare_hosts[cluster.name] = [{ 'name': host.name, 'vms': len(vms)}]
                                 if len(vms):
                                     logging.info(cluster.name + ": " + host.name + ": " + str(vms))
-                    else:
-                        self.gauge['vcenter_cluster_ha_configured'].labels(self.vcenterInfo['hostname'],cluster.name).set(0)
 
                 except Exception as e:
                     logging.debug(
