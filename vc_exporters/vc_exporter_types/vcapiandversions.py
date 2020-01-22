@@ -347,6 +347,10 @@ class Vcapiandversions(VCExporter):
                                     # VM is a shadow VM representing a Cinder volume
                                     logging.debug("cluster %s host %s - Ignoring shadow VM %s of type %s managed by %s", cluster.name, host.name, vm.name, vm.config.managedBy.type, vm.config.managedBy.extensionKey)
                                     continue
+                                elif hasattr(vm.runtime, 'powerState'):
+                                    if vm.runtime.powerState == 'poweredOff':
+                                        logging.debug("cluster %s host %s - Ignoring powered off VM %s of type %s managed by %s", cluster.name, host.name, vm.name, vm.config.managedBy.type, vm.config.managedBy.extensionKey)
+                                        continue
                                 else:
                                     # A real VM which should not be on a HA host
                                     vms.append(vm)
