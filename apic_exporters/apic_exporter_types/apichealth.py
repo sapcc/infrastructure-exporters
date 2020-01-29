@@ -1,12 +1,15 @@
 import re
 from apic_exporters.apic_exporter import Apicexporter
-from prometheus_client import Gauge
+from prometheus_client import Gauge, Counter
 
 class Apichealth(Apicexporter):
 
     def __init__(self, exporterType, exporterConfig):
         super().__init__(exporterType, exporterConfig)
-        self.gauge = {}
+        self.counter, self.gauge = {}, {}
+        self.counter['network_apic_status'] = Counter('network_apic_status',
+                                                      'network_apic_status',
+                                                      ['hostname', 'code'])
         self.gauge['network_apic_cpu_percentage'] = Gauge('network_apic_cpu_percentage',
                                                           'network_apic_cpu_percentage',
                                                           ['hostname'])
@@ -17,8 +20,8 @@ class Apichealth(Apicexporter):
                                                           'network_apic_memFree',
                                                           ['hostname'])
         self.gauge['network_apic_physcial_interface_resets'] = Gauge('network_apic_physcial_interface_resets',
-                                        'network_apic_physcial_interface_resets',
-                                        ['interfaceID'])  
+                                                                    'network_apic_physcial_interface_resets',
+                                                                    ['interfaceID'])
         self.gauge['network_apic_duplicate_ip'] = Gauge('network_apic_duplicate_ip',
                                                          'network_apic_duplicate_ip',
                                                          ['apic_host',
@@ -71,6 +74,8 @@ class Apichealth(Apicexporter):
 
     def export(self):
         for apicHost in self.apicHosts:
+            self.counter['network_apic_status'].labels(self.apicHosts[apicHost]['name'],
+                                                       self.apicHosts[apicHost]['status_code']).inc()
             if self.apicHosts[apicHost]['apiMetrics_status'] != 200:
                 self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(-1)
                 self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(-1)
