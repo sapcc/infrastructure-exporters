@@ -76,6 +76,7 @@ class Apichealth(Apicexporter):
         for apicHost in self.apicHosts:
             self.counter['network_apic_status'].labels(self.apicHosts[apicHost]['name'],
                                                        self.apicHosts[apicHost]['status_code']).inc()
+
             if self.apicHosts[apicHost]['apiMetrics_status'] != 200:
                 self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(-1)
                 self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(-1)
