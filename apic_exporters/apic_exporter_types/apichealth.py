@@ -37,14 +37,19 @@ class Apichealth(Apicexporter):
 
             apicHealthUrl =  "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/procEntity.json?"
             apicHealthInfo = self.apicGetRequest(apicHealthUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
-            
+
+            # apic is not responding
+            if self.apicHosts[apicHost]['status_code'] != 200 or apicHealthInfo is None:
+                continue
+
+            # get apic health
             if self.isDataValid(self.apicHosts[apicHost]['status_code'], apicHealthInfo):
                 self.apicHosts[apicHost]['apiMetrics_status'] = 200
                 self.apicHosts[apicHost]['apicMetrics'] = apicHealthInfo['imdata'][0]['procEntity']['attributes']
                 self.metric_count += 3
             else:
-                self.apicHosts[apicHost]['apiMetrics_status'] = 200
-            
+                self.apicHosts[apicHost]['apiMetrics_status'] = 0
+
             physIfUrl = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/ethpmPhysIf.json?"
             physIfInfo = self.apicGetRequest(physIfUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'],apicHost)
             if self.isDataValid(self.apicHosts[apicHost]['status_code'], physIfInfo):
@@ -77,16 +82,19 @@ class Apichealth(Apicexporter):
             self.counter['network_apic_status'].labels(self.apicHosts[apicHost]['name'],
                                                        self.apicHosts[apicHost]['status_code']).inc()
 
-            if self.apicHosts[apicHost]['apiMetrics_status'] != 200:
+            # dont export metrics for apics not responding
+            if self.apicHosts[apicHost]['status_code'] != 200:
+                continue
+
+            if self.apicHosts[apicHost]['apiMetrics_status'] == 200:
+                self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['cpuPct'])
+                self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['maxMemAlloc'])
+                self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['memFree'])
+            else:
                 self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(-1)
                 self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(-1)
                 self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(-1)
                 continue
-
-            else:
-                self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['cpuPct'])
-                self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['maxMemAlloc'])
-                self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['memFree'])
 
             if self.apicHosts[apicHost]['physIfInfo_status'] == 200:
                 for physIf in self.apicHosts[apicHost]['physIf']:

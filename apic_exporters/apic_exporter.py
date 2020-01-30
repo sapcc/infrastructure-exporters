@@ -55,11 +55,11 @@ class Apicexporter(exporter.Exporter):
         try:
             r = requests.get(url, cookies=cookie, proxies=proxies, verify=False, timeout=15)
         except Exception as e:
-            logging.error("Problem getting metrics for apic at " + apicHost)
-            self.apicHosts[apicHost]['status_code'] = 0
+            logging.error("Problem connecting to %s: %s", url, repr(e))
+            self.apicHosts[apicHost]['status_code'] = 500
             return None
 
-        if r.status_code == 403 and "Token was invalid" in r.text:
+        if r.status_code == 403 and ("Token was invalid" in r.text or "token" in r.text):
             apicCookie = self.getApicCookie(apicHost,
                                             self.apicInfo['username'],
                                             self.apicInfo['password'],
@@ -69,15 +69,17 @@ class Apicexporter(exporter.Exporter):
         try:
             r = requests.get(url, cookies=cookie, proxies=proxies, verify=False, timeout=15)
         except Exception as e:
-            logging.error("Problem getting metrics for apic at " + apicHost)
-            self.apicHosts[apicHost]['status_code'] = 0
+            logging.error("Problem connecting to %s: %s", url, repr(e))
+            self.apicHosts[apicHost]['status_code'] = 500
             return None
-        
-        if r.status_code != 200:
-            logging.info("Unable to get data from URL: " + url)
-            self.apicHosts[apicHost]['status_code'] = 0
-        else:
+
+        if r.status_code == 200:
             result = json.loads(r.text)
             r.close()
-            self.apicHosts[apicHost]['status_code']= 200
+            self.apicHosts[apicHost]['status_code']= r.status_code
             return result
+        else:
+            logging.error("url %s responding with %s", url, r.status_code)
+            #logging.info("Unable to get data from URL: " + url)
+            self.apicHosts[apicHost]['status_code'] = r.status_code
+            return None
