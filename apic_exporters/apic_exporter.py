@@ -4,6 +4,9 @@ import requests
 import logging
 import json
 from prometheus_client import start_http_server
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 class Apicexporter(exporter.Exporter):
 
