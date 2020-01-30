@@ -31,27 +31,29 @@ class Apicexporter(exporter.Exporter):
         logging.debug("Getting cookie from https://" + apicHost + "/api/aaaLogin.json?")
         apiLoginUrl = "https://" + apicHost + "/api/aaaLogin.json?"
         loginPayload = {"aaaUser":{"attributes": {"name": username, "pwd": password}}}
+
+        apiCookie = None
+
         try:
             r = requests.post(apiLoginUrl, json=loginPayload, proxies=proxies, verify=False, timeout=15)
         except requests.exceptions.ConnectionError as e:
-            logging.error("Can't connect to apic at " + apicHost)
-            self.apicHosts[apicHost]['canConnectToAPIC'] = False
-            self.apicHosts[apicHost]['status_code'] = 0
-            return None
+            logging.error("Problem connecting to %s: %s", apiLoginUrl, repr(e))
+            self.apicHosts[apicHost]['status_code'] = 500
 
-        if r.status_code != 200:
-            logging.info("Unable to get cookie at URL: " + apiLoginUrl)
-            self.apicHosts[apicHost]['status_code'] = 0
-        else:
+        self.apicHosts[apicHost]['status_code'] = r.status_code
+        if r.status_code == 200:
             result = json.loads(r.text)
             r.close()
             apiCookie = result['imdata'][0]['aaaLogin']['attributes']['token']
-            self.apicHosts[apicHost]['status_code'] = 200
-            return apiCookie
+        else:
+            logging.error("url %s responding with %s", apiLoginUrl, r.status_code)
+
+        return apiCookie
 
     def apicGetRequest(self, url, apicCookie, proxies, apicHost):
         logging.debug("Making request to " + url)
         cookie = {"APIC-cookie": apicCookie}
+
         try:
             r = requests.get(url, cookies=cookie, proxies=proxies, verify=False, timeout=15)
         except Exception as e:
@@ -64,6 +66,7 @@ class Apicexporter(exporter.Exporter):
                                             self.apicInfo['username'],
                                             self.apicInfo['password'],
                                             self.apicInfo['proxy'])
+
             self.apicHosts[apicHost]['loginCookie'] = apicCookie
 
         try:
@@ -73,13 +76,11 @@ class Apicexporter(exporter.Exporter):
             self.apicHosts[apicHost]['status_code'] = 500
             return None
 
+        self.apicHosts[apicHost]['status_code'] = r.status_code
         if r.status_code == 200:
             result = json.loads(r.text)
             r.close()
-            self.apicHosts[apicHost]['status_code']= r.status_code
             return result
         else:
             logging.error("url %s responding with %s", url, r.status_code)
-            #logging.info("Unable to get data from URL: " + url)
-            self.apicHosts[apicHost]['status_code'] = r.status_code
             return None
