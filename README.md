@@ -14,7 +14,7 @@ Currently Available Exporters
 
 Running an Exporter from cloned repo
 ------------
-1. clone the repo https://github.wdf.sap.corp/i814196/exporters.git
+1. clone the repo https://github.com/sapcc/infrastructure-exporters.git
 2. cd to the exporters folder
 3. modify the yaml files in samples/ to match your infrastructure
 4. install the python environment
@@ -51,7 +51,7 @@ Exporter files, classes and conventions
 
 Adding your own Exporter
 ------------
-- clone the repo https://github.wdf.sap.corp/i814196/exporters.git
+- clone the repo https://github.com/sapcc/infrastructure-exporters.git
 - cd to the exporters folder
 - create a folder for your infrastructure type
    - i.e. ```mkdir mydevice_exporters```
