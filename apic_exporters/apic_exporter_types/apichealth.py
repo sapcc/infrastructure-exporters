@@ -25,7 +25,7 @@ class Apichealth(Apicexporter):
         self.gauge['network_apic_duplicate_ip'] = Gauge('network_apic_duplicate_ip',
                                                          'network_apic_duplicate_ip',
                                                          ['apic_host',
-                                                         'ip', 'mac', 'node_id'])
+                                                         'ip', 'mac', 'node_id', 'tn'])
                                     
     def collect(self):
         self.metric_count = 0
@@ -70,10 +70,21 @@ class Apichealth(Apicexporter):
                 self.apicHosts[apicHost]['duplicateIpsInfo_status'] = 200
                 for duplicateIp in duplicateIpsInfo['imdata']:
                     ipAddres = duplicateIp['fvIp']['attributes']['addr']
-                    ipMac = re.search(r"([0-9A-F]{2}:){5}[0-9A-F]{2}", duplicateIp['fvIp']['attributes']['dn']).group()
-                    ipNode = duplicateIp['fvIp']['children'][0]['fvReportingNode']['attributes']['id']
-                    self.apicHosts[apicHost]['duplicateIps'].append({'ip':ipAddres, 'mac':ipMac, 'apicNode':ipNode})
-                    self.metric_count += 1
+                    ipDn = duplicateIp['fvIp']['attributes']['dn']
+                    ipMac = re.search(r"([0-9A-F]{2}:){5}[0-9A-F]{2}", ipDn).group()
+                    ipTenat = re.match(r"uni\/tn-(.+)\/ap.+", ipDn)[1]
+                    #ipNode = duplicateIp['fvIp']['children'][0]['fvReportingNode']['attributes']['id']
+                    #self.apicHosts[apicHost]['duplicateIps'].append({'ip':ipAddres, 'mac':ipMac, 'apicNode':ipNode})
+                    ipNode = []
+                    for child in duplicateIp['fvIp']['children']:
+                        reporting_node_id = child['fvReportingNode']['attributes']['id']
+                        ipNode.append(reporting_node_id)
+                    if len(ipNode) > 1:
+                        self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': str(ipNode[0] + "-" + ipNode[1]), 'tn': ipTenat})
+                    else:
+                        self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': str(ipNode[0]), 'tn': ipTenat})
+
+                self.metric_count += 1
             else:
                 self.apicHosts[apicHost]['duplicateIpsInfo_status'] = 0
 
@@ -106,7 +117,8 @@ class Apichealth(Apicexporter):
                     self.gauge['network_apic_duplicate_ip'].labels(self.apicHosts[apicHost]['name'],
                                                                 duplicateIp['ip'],
                                                                 duplicateIp['mac'],
-                                                                duplicateIp['apicNode']).set(1)
+                                                                duplicateIp['apicNode'],
+                                                                duplicateIp['tn']).set(1)
 
     def isDataValid(self, status_code, data):
         if status_code == 200 and isinstance(data, dict) and isinstance(data.get('imdata'), list):
