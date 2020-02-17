@@ -24,8 +24,7 @@ class Apichealth(Apicexporter):
                                                                     ['interfaceID'])
         self.gauge['network_apic_duplicate_ip'] = Gauge('network_apic_duplicate_ip',
                                                          'network_apic_duplicate_ip',
-                                                         ['apic_host',
-                                                         'ip', 'mac', 'node_id', 'tn'])
+                                                         ['apic_host', 'ip', 'mac', 'node_id', 'tn'])
                                     
     def collect(self):
         self.metric_count = 0
@@ -80,7 +79,7 @@ class Apichealth(Apicexporter):
                         reporting_node_id = child['fvReportingNode']['attributes']['id']
                         ipNode.append(reporting_node_id)
                     if len(ipNode) > 1:
-                        self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': str(ipNode[0] + "-" + ipNode[1]), 'tn': ipTenat})
+                        self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': str(ipNode[0] + "_" + ipNode[1]), 'tn': ipTenat})
                     else:
                         self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': str(ipNode[0]), 'tn': ipTenat})
 
