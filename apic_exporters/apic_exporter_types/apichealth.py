@@ -24,7 +24,7 @@ class Apichealth(Apicexporter):
                                                                     ['interfaceID'])
         self.gauge['network_apic_duplicate_ip'] = Gauge('network_apic_duplicate_ip',
                                                          'network_apic_duplicate_ip',
-                                                         ['apic_host', 'ip', 'mac', 'node_id', 'tn'])
+                                                         ['apic_host', 'ip', 'mac', 'node_id', 'tenant'])
                                     
     def collect(self):
         self.metric_count = 0
