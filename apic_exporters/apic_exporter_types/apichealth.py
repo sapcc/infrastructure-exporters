@@ -24,7 +24,7 @@ class Apichealth(Apicexporter):
                                                                     ['interfaceID'])
         self.gauge['network_apic_duplicate_ip'] = Gauge('network_apic_duplicate_ip',
                                                          'network_apic_duplicate_ip',
-                                                         ['apic_host', 'ip', 'mac', 'node_id'])
+                                                         ['apic_host', 'ip', 'mac', 'node_id', 'tn'])
                                     
     def collect(self):
         self.metric_count = 0
@@ -79,8 +79,8 @@ class Apichealth(Apicexporter):
                         reporting_node_id = child['fvReportingNode']['attributes']['id']
                         ipNodes.append(str(reporting_node_id))
 
-                    logging.info("ip: %s mac: %s aoicNode: %s tenant: %s", ipAddres, ipMac, '_'.join(ipNodes), ipTenat)
-                    self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': '_'.join(ipNodes), 'tn': ipTenat})
+                    logging.info("ip: %s mac: %s aoicNode: %s tenant: %s", ipAddres, ipMac, '+'.join(ipNodes), ipTenat)
+                    self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': '+'.join(ipNodes), 'tn': ipTenat})
 
                 self.metric_count += 1
             else:
@@ -115,7 +115,8 @@ class Apichealth(Apicexporter):
                     self.gauge['network_apic_duplicate_ip'].labels(self.apicHosts[apicHost]['name'],
                                                                 duplicateIp['ip'],
                                                                 duplicateIp['mac'],
-                                                                duplicateIp['apicNode']).set(1)
+                                                                duplicateIp['apicNode'],
+                                                                duplicateIp['tn']).set(1)
 
     def isDataValid(self, status_code, data):
         if status_code == 200 and isinstance(data, dict) and isinstance(data.get('imdata'), list):
