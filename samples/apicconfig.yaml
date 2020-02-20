@@ -1,16 +1,16 @@
+log_level: INFO
+prometheus_port: 9102
 device_information:
-    hostname: localhost
-    username: admin2
-    password: password
-    tenant_name: sometenant
+    hosts: 10.114.250.71,10.114.250.73,10.114.250.75,10.114.250.7,10.114.250.9
+    username:
+    password:
+    tenant_name: cc-openstack-eu-de-1
     proxy: 
         http: ''
         https: ''
         no_proxy: '*'
-    log_level: INFO
 exporter_types:
     apichealth:
       name: apichealth
       enabled: True
       collection_interval: 60
-      prometheus_port: 9102
