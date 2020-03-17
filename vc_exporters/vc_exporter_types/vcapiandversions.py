@@ -333,6 +333,9 @@ class Vcapiandversions(VCExporter):
                             if host.runtime.connectionState == 'notResponding':
                                 logging.info("cluster: %s, HA Host: %s not responding. Skipping", cluster.name, host.name)
                                 continue
+                            if host.runtime.inMaintenanceMode:
+                                logging.info("cluster: %s, HA Host: %s is in maintenance, shouldn't be! Skipping", cluster.name, host.name)
+                                continue
                             vms = list()
                             for vm in host.vm:
                                 if vm.config is None:
