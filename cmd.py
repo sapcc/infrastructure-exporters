@@ -7,13 +7,14 @@ from vc_exporters.vc_exporter_types import (vcapiandversions,
                                             vccustomerdsmetrics,
                                             vchostmetrics)
 from apic_exporters.apic_exporter_types import apichealth
-
+from apic_exporters.apic_exporter_types import apicprocess
 
 EXPORTERS = {
     'vcapiandversions': vcapiandversions.Vcapiandversions,
     'vccustomervmmetrics': vccustomervmmetrics.Vccustomervmmetrics,
     'vccustomerdsmetrics': vccustomerdsmetrics.Vccustomerdsmetrics,
     'apichealth': apichealth.Apichealth,
+    'apicprocess': apicprocess.ApicProcess,
     'vchostmetrics': vchostmetrics.VcHostMetrics
 }
 
