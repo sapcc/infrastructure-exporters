@@ -9,21 +9,19 @@ class ApicProcess(Apicexporter):
         self.counter, self.gauge = {}, {}
 
         self.gauge['network_apic_process_memory_used_min'] = Gauge('network_apic_process_memory_used_min',
-                                                         'network_apic_process_memory_used_min', ['procType', 'procName'])
+                                                         'network_apic_process_memory_used_min', ['hostname', 'procType', 'procName'])
 
         self.gauge['network_apic_process_memory_used_max'] = Gauge('network_apic_process_memory_used_max',
-                                                         'network_apic_process_memory_used_max', ['procType', 'procName'])
+                                                         'network_apic_process_memory_used_max', ['hostname', 'procType', 'procName'])
 
         self.gauge['network_apic_process_memory_used_avg'] = Gauge('network_apic_process_memory_used_avg',
-                                                         'network_apic_process_memory_used_avg', ['procType', 'procName'])
+                                                         'network_apic_process_memory_used_avg', ['hostname', 'procType', 'procName'])
 
 
     def collect(self):
         self.metric_count = 0
         for apicHost in self.apicHosts:
-            self.apicHosts[apicHost]['procMemUsedMin'] = []
-            self.apicHosts[apicHost]['procMemUsedMax'] = []
-            self.apicHosts[apicHost]['procMemUsedAvg'] = []
+            self.apicHosts[apicHost]['apicProcMetrics'] = {}
 
             if self.apicHosts[apicHost]['canConnectToAPIC'] == False:
                 continue
@@ -58,37 +56,35 @@ class ApicProcess(Apicexporter):
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMax'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg'])
 
+                        self.apicHosts[apicHost]['apicProcMetrics'].update({'procType': 'nfm',
+                            'procName': apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'],
+                            'memUsedMin': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMin'],
+                            'memUsedMax': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMax'],
+                            'memUsedAvg': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg']})
+
     def export(self):
         for apicHost in self.apicHosts:
-            self.counter['network_apic_status'].labels(self.apicHosts[apicHost]['name'],
-                                                       self.apicHosts[apicHost]['status_code']).inc()
 
             # dont export metrics for apics not responding
             if self.apicHosts[apicHost]['status_code'] != 200:
                 continue
 
-            if self.apicHosts[apicHost]['apiMetrics_status'] == 200:
-                self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['cpuPct'])
-                self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['maxMemAlloc'])
-                self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(self.apicHosts[apicHost]['apicMetrics']['memFree'])
-            else:
-                self.gauge['network_apic_cpu_percentage'].labels(self.apicHosts[apicHost]['name']).set(-1)
-                self.gauge['network_apic_maxMemAlloc'].labels(self.apicHosts[apicHost]['name']).set(-1)
-                self.gauge['network_apic_memFree'].labels(self.apicHosts[apicHost]['name']).set(-1)
-                continue
+            # export only existing metrics
+            if self.apicHosts[apicHost]['apicProcMetrics'] == True:
+                self.gauge['network_apic_process_memory_used_min'].labels(self.apicHosts[apicHost]['name'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procType'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procName']
+                ).set(self.apicHosts[apicHost]['apicProcMetrics']['memUsedMin'])
 
-            if self.apicHosts[apicHost]['physIfInfo_status'] == 200:
-                for physIf in self.apicHosts[apicHost]['physIf']:
-                    physIfLabel = self.apicHosts[apicHost]['name'] + "-" + physIf['dn']
-                    self.gauge['network_apic_physcial_interface_resets'].labels(physIfLabel).set(physIf['resetCtr'])       
+                self.gauge['network_apic_process_memory_used_max'].labels(self.apicHosts[apicHost]['name'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procType'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procName']
+                ).set(self.apicHosts[apicHost]['apicProcMetrics']['memUsedMax'])
 
-            if self.apicHosts[apicHost]['duplicateIpsInfo_status'] == 200:
-                for duplicateIp in self.apicHosts[apicHost]['duplicateIps']:
-                    self.gauge['network_apic_duplicate_ip'].labels(self.apicHosts[apicHost]['name'],
-                                                                duplicateIp['ip'],
-                                                                duplicateIp['mac'],
-                                                                duplicateIp['apicNode'],
-                                                                duplicateIp['tn']).set(1)
+                self.gauge['network_apic_process_memory_used_avg'].labels(self.apicHosts[apicHost]['name'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procType'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procName']
+                ).set(self.apicHosts[apicHost]['apicProcMetrics']['memUsedAvg'])
 
     def isDataValid(self, status_code, data):
         if status_code == 200 and isinstance(data, dict) and isinstance(data.get('imdata'), list):
