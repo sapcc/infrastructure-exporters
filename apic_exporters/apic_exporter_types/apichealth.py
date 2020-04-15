@@ -75,12 +75,15 @@ class Apichealth(Apicexporter):
                     #ipNode = duplicateIp['fvIp']['children'][0]['fvReportingNode']['attributes']['id']
                     #self.apicHosts[apicHost]['duplicateIps'].append({'ip':ipAddres, 'mac':ipMac, 'apicNode':ipNode})
                     ipNodes = []
-                    for child in duplicateIp['fvIp']['children']:
-                        reporting_node_id = child['fvReportingNode']['attributes']['id']
-                        ipNodes.append(str(reporting_node_id))
+                    if 'children' in duplicateIp['fvIp']:
+                        for child in duplicateIp['fvIp']['children']:
+                            reporting_node_id = child['fvReportingNode']['attributes']['id']
+                            ipNodes.append(str(reporting_node_id))
 
-                    logging.info("ip: %s mac: %s aoicNode: %s tenant: %s", ipAddres, ipMac, '+'.join(ipNodes), ipTenat)
-                    self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': '+'.join(ipNodes), 'tn': ipTenat})
+                    if not ipNodes:
+                        self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': '+'.join(ipNodes), 'tn': ipTenat})
+                    else:
+                        self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': 'none', 'tn': ipTenat})
 
                 self.metric_count += 1
             else:

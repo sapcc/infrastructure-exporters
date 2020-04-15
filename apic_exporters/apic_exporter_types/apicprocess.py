@@ -9,13 +9,13 @@ class ApicProcess(Apicexporter):
         self.counter, self.gauge = {}, {}
 
         self.gauge['network_apic_process_memory_used_min'] = Gauge('network_apic_process_memory_used_min',
-                                                         'network_apic_process_memory_used_min', ['hostname', 'procType', 'procName'])
+                                                         'network_apic_process_memory_used_min', ['hostname', 'procName', 'procDn'])
 
         self.gauge['network_apic_process_memory_used_max'] = Gauge('network_apic_process_memory_used_max',
-                                                         'network_apic_process_memory_used_max', ['hostname', 'procType', 'procName'])
+                                                         'network_apic_process_memory_used_max', ['hostname', 'procName', 'procDn'])
 
         self.gauge['network_apic_process_memory_used_avg'] = Gauge('network_apic_process_memory_used_avg',
-                                                         'network_apic_process_memory_used_avg', ['hostname', 'procType', 'procName'])
+                                                         'network_apic_process_memory_used_avg', ['hostname', 'procName', 'procDn'])
 
 
     def collect(self):
@@ -28,39 +28,49 @@ class ApicProcess(Apicexporter):
 
             # get nodes
             apicNodeUrl  = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/fabricNode.json?"
-            apicNodeList = (self.apicGetRequest(apicNodeUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost))['imdata']
+            apicNodes    = self.apicGetRequest(apicNodeUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
             # apic is not responding
-            if self.apicHosts[apicHost]['status_code'] != 200 or apicNodeList is None:
+            if self.apicHosts[apicHost]['status_code'] != 200 or apicNodes is None:
                 continue
 
-            for node in apicNodeList:
+            for node in apicNodes['imdata']:
 
                 # get nfm process is per node
                 apicNfmProcessUrl = 'https://' + self.apicHosts[apicHost]['name'] + '/api/node/class/' \
                     + node['fabricNode']['attributes']['dn'] + '/procProc.json?query-target-filter=eq(procProc.name,"nfm")'
                 apicNfmProcessList = self.apicGetRequest(apicNfmProcessUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
+                if apicNfmProcessList is None:
+                    continue
+
                 if int(apicNfmProcessList['totalCount']) > 0:
-#                    logging.info("nfm process id: %s", apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'])
 
                     apicNfmProcessMemoryUsedURL = 'https://' + self.apicHosts[apicHost]['name'] + '/api/node/mo/' \
                         + apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'] + '/HDprocProcMem5min-0.json'
                     apicNfmProcessMemoryUsed = self.apicGetRequest(apicNfmProcessMemoryUsedURL, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
+                    if apicNfmProcessMemoryUsed is None:
+                        continue
+
                     if int(apicNfmProcessMemoryUsed['totalCount']) > 0:
-                        logging.info("procType: %s, procName: %s, MemUsedMin: %s, MemUsedMax: %s, MemUsedAvg: %s",
-                            "nfm",
+                        logging.debug("procName: %s, procDn: %s, MemUsedMin: %s, MemUsedMax: %s, MemUsedAvg: %s",
+                            apicNfmProcessList['imdata'][0]['procProc']['attributes']['name'],
                             apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMin'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMax'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg'])
 
-                        self.apicHosts[apicHost]['apicProcMetrics'].update({'procType': 'nfm',
-                            'procName': apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'],
+                        self.apicHosts[apicHost]['apicProcMetrics'].update({
+                            'procName':   apicNfmProcessList['imdata'][0]['procProc']['attributes']['name'],
+                            'procDn':     apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'],
                             'memUsedMin': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMin'],
                             'memUsedMax': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMax'],
-                            'memUsedAvg': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg']})
+                            'memUsedAvg': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg']
+                        })
+
+                        self.metric_count += 3
+                        logging.debug("proc metric count: %s", self.metric_count)
 
     def export(self):
         for apicHost in self.apicHosts:
@@ -72,18 +82,18 @@ class ApicProcess(Apicexporter):
             # export only existing metrics
             if self.apicHosts[apicHost]['apicProcMetrics'] == True:
                 self.gauge['network_apic_process_memory_used_min'].labels(self.apicHosts[apicHost]['name'],
-                    self.apicHosts[apicHost]['apicProcMetrics']['procType'],
-                    self.apicHosts[apicHost]['apicProcMetrics']['procName']
+                    self.apicHosts[apicHost]['apicProcMetrics']['procName'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procDn']
                 ).set(self.apicHosts[apicHost]['apicProcMetrics']['memUsedMin'])
 
                 self.gauge['network_apic_process_memory_used_max'].labels(self.apicHosts[apicHost]['name'],
-                    self.apicHosts[apicHost]['apicProcMetrics']['procType'],
-                    self.apicHosts[apicHost]['apicProcMetrics']['procName']
+                    self.apicHosts[apicHost]['apicProcMetrics']['procName'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procDn']
                 ).set(self.apicHosts[apicHost]['apicProcMetrics']['memUsedMax'])
 
                 self.gauge['network_apic_process_memory_used_avg'].labels(self.apicHosts[apicHost]['name'],
-                    self.apicHosts[apicHost]['apicProcMetrics']['procType'],
-                    self.apicHosts[apicHost]['apicProcMetrics']['procName']
+                    self.apicHosts[apicHost]['apicProcMetrics']['procName'],
+                    self.apicHosts[apicHost]['apicProcMetrics']['procDn']
                 ).set(self.apicHosts[apicHost]['apicProcMetrics']['memUsedAvg'])
 
     def isDataValid(self, status_code, data):

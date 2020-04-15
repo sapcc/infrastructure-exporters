@@ -1,6 +1,7 @@
 import time
 import argparse
 import logging
+from threading import Thread
 from datetime import datetime
 from vc_exporters.vc_exporter_types import (vcapiandversions,
                                             vccustomervmmetrics,
@@ -36,14 +37,9 @@ def run_loop(exporterInstance, duration):
         exporterInstance.export()
         export_end_time = int(time.time())
 
-        total_loop_time = ((collect_end_time - collect_start_time) +
-                           (export_end_time - export_start_time))
-        logging.info('number of ' + exporterInstance.exporterType +
-                     ' we got metrics for ' +
-                     str(exporterInstance.metric_count) + " " +
-                     exporterInstance.exporterType +
-                     '\'s - actual runtime: '
-                     + str(total_loop_time) + 's')
+        total_loop_time = ((collect_end_time - collect_start_time) + (export_end_time - export_start_time))
+
+        logging.info("%s: got %s metrics in %ss", exporterInstance.exporterType, exporterInstance.metric_count, total_loop_time)
 
         # this is the time we sleep to fill the loop
         # runtime until it reaches "interval"
@@ -51,15 +47,13 @@ def run_loop(exporterInstance, duration):
         # the last interval to avoid gaps in
         # metrics coverage (i.e. we get the metrics
         # quicker than the averaging time)
-        loop_sleep_time = 0.9 * \
-            int(exporterInstance.exporterConfig['exporter_types'][exporterInstance.exporterType]['collection_interval']) - \
-            (collect_end_time - collect_start_time) + \
-            (export_end_time - export_end_time)
+        loop_sleep_time = 0.9 * int(exporterInstance.exporterConfig['exporter_types'][exporterInstance.exporterType]['collection_interval']) - total_loop_time
+        logging.debug("%s: loop sleep time: %ss", exporterInstance.exporterType, loop_sleep_time)
 
         if loop_sleep_time < 0:
-            logging.warn('getting the metrics takes around ' + str(
-                exporterInstance.exporterConfig['exporter_types'][exporterInstance.exporterType]['collection_interval']) +
-                ' seconds or longer - please increase the interval setting')
+            logging.warning("%s: getting metrics takes around %ss or longer - please increase the collection intervall",
+                exporterInstance.exporterType,
+                exporterInstance.exporterConfig['exporter_types'][exporterInstance.exporterType]['collection_interval'])
             loop_sleep_time = 0
 
         logging.debug('====> loop end before sleep: %s' % datetime.now())
@@ -70,7 +64,6 @@ def run_loop(exporterInstance, duration):
         logging.info('====> Ending run_loop: ' +
                      exporterInstance.exporterType + ": " + str(datetime.now()))
 
-
 if __name__ == "__main__":
 
     exporterConfigMapping = {}
@@ -79,7 +72,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-f", "--singleconfifigfile", help="Specify full path to single config file to run only one exporter.  Must use -t flag also to specify type.")
     parser.add_argument(
-        "-t", "--exportertype", help="Specify exporter type [vcapiandversions, vccustomervmmetrics, vccustomerdsmetrics, apichealth] Used with -f flag")
+        "-t", "--exportertype", nargs='+', help="Specify exporter type [vcapiandversions, vccustomervmmetrics, vccustomerdsmetrics, apichealth, apicprocess] Used with -f flag")
     args, remaining_argv = parser.parse_known_args()
 
     if args.singleconfifigfile is not None and args.exportertype is not None:
@@ -88,9 +81,15 @@ if __name__ == "__main__":
             exit(0)
         else:
             logging = logging.getLogger()
-            infraExporter = EXPORTERS[args.exportertype.lower()](
-                args.exportertype.lower(), args.singleconfifigfile)
-            run_loop(infraExporter, infraExporter.duration)
+
+            # run each exporter type in a separate thread
+            threads = []
+            for exportertype in args.exportertype:
+                infraExporter = EXPORTERS[exportertype.lower()](exportertype.lower(), args.singleconfifigfile)
+                threads.append(Thread(target=run_loop, args=(infraExporter, infraExporter.duration)))
+
+            for thread in threads:
+                thread.start()
 
     else:
         parser.print_help()
