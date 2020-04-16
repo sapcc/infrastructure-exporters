@@ -34,6 +34,12 @@ class ApicProcess(Apicexporter):
             if self.apicHosts[apicHost]['status_code'] != 200 or apicNodes is None:
                 continue
 
+            # get apic health
+            if self.isDataValid(self.apicHosts[apicHost]['status_code'], apicNodes):
+                self.apicHosts[apicHost]['apiMetrics_status'] = 200
+            else:
+                self.apicHosts[apicHost]['apiMetrics_status'] = 0
+
             for node in apicNodes['imdata']:
 
                 # get nfm process is per node
@@ -80,7 +86,7 @@ class ApicProcess(Apicexporter):
                 continue
 
             # export only existing metrics
-            if self.apicHosts[apicHost]['apicProcMetrics'] == True:
+            if self.apicHosts[apicHost]['apiMetrics_status'] == 200:
                 self.gauge['network_apic_process_memory_used_min'].labels(self.apicHosts[apicHost]['name'],
                     self.apicHosts[apicHost]['apicProcMetrics']['procName'],
                     self.apicHosts[apicHost]['apicProcMetrics']['procDn']
