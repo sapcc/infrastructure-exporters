@@ -9,13 +9,13 @@ class ApicProcess(Apicexporter):
         self.counter, self.gauge = {}, {}
 
         self.gauge['network_apic_process_memory_used_min'] = Gauge('network_apic_process_memory_used_min',
-                                                         'network_apic_process_memory_used_min', ['hostname', 'procName', 'procDn'])
+                                                         'network_apic_process_memory_used_min', ['apicHost', 'procName', 'procDn'])
 
         self.gauge['network_apic_process_memory_used_max'] = Gauge('network_apic_process_memory_used_max',
-                                                         'network_apic_process_memory_used_max', ['hostname', 'procName', 'procDn'])
+                                                         'network_apic_process_memory_used_max', ['apicHost', 'procName', 'procDn'])
 
         self.gauge['network_apic_process_memory_used_avg'] = Gauge('network_apic_process_memory_used_avg',
-                                                         'network_apic_process_memory_used_avg', ['hostname', 'procName', 'procDn'])
+                                                         'network_apic_process_memory_used_avg', ['apicHost', 'procName', 'procDn'])
 
 
     def collect(self):
