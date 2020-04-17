@@ -32,6 +32,7 @@ class ApicProcess(Apicexporter):
 
             # apic is not responding
             if self.apicHosts[apicHost]['status_code'] != 200 or apicNodes is None:
+                logging.debug("apic host %s is not responding", self.apicHosts[apicHost]['name'])
                 continue
 
             # get apic health
@@ -41,35 +42,39 @@ class ApicProcess(Apicexporter):
                 self.apicHosts[apicHost]['apiMetrics_status'] = 0
 
             for node in apicNodes['imdata']:
+                logging.debug("fabricNode: %s", node['fabricNode']['attributes']['dn'])
 
                 # get nfm process is per node
                 apicNfmProcessUrl = 'https://' + self.apicHosts[apicHost]['name'] + '/api/node/class/' \
                     + node['fabricNode']['attributes']['dn'] + '/procProc.json?query-target-filter=eq(procProc.name,"nfm")'
-                apicNfmProcessList = self.apicGetRequest(apicNfmProcessUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
+                apicNfmProcess = self.apicGetRequest(apicNfmProcessUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
-                if apicNfmProcessList is None:
+                if apicNfmProcess is None:
+                    logging.debug("Node %s has No nfm process", node['fabricNode']['attributes']['dn'])
                     continue
 
-                if int(apicNfmProcessList['totalCount']) > 0:
+                if int(apicNfmProcess['totalCount']) > 0:
+                    logging.debug("nfmProcess: %s", apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'])
 
                     apicNfmProcessMemoryUsedURL = 'https://' + self.apicHosts[apicHost]['name'] + '/api/node/mo/' \
-                        + apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'] + '/HDprocProcMem5min-0.json'
+                        + apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'] + '/HDprocProcMem5min-0.json'
                     apicNfmProcessMemoryUsed = self.apicGetRequest(apicNfmProcessMemoryUsedURL, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
                     if apicNfmProcessMemoryUsed is None:
+                        logging.debug("Process %s has no used memory info", apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'])
                         continue
 
                     if int(apicNfmProcessMemoryUsed['totalCount']) > 0:
                         logging.debug("procName: %s, procDn: %s, MemUsedMin: %s, MemUsedMax: %s, MemUsedAvg: %s",
-                            apicNfmProcessList['imdata'][0]['procProc']['attributes']['name'],
-                            apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'],
+                            apicNfmProcess['imdata'][0]['procProc']['attributes']['name'],
+                            apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMin'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMax'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg'])
 
                         self.apicHosts[apicHost]['apicProcMetrics'].update({
-                            'procName':   apicNfmProcessList['imdata'][0]['procProc']['attributes']['name'],
-                            'procDn':     apicNfmProcessList['imdata'][0]['procProc']['attributes']['dn'],
+                            'procName':   apicNfmProcess['imdata'][0]['procProc']['attributes']['name'],
+                            'procDn':     apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'],
                             'memUsedMin': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMin'],
                             'memUsedMax': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMax'],
                             'memUsedAvg': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg']
