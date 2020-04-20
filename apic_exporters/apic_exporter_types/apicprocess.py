@@ -77,6 +77,9 @@ class ApicProcess(Apicexporter):
                         self.metric_count += 3
                         logging.debug("proc metric count: %s", self.metric_count)
 
+            # skip the other apic hosts since we already collected the metrics data from one host
+            break
+
     def export(self):
         for apicHost in self.apicHosts:
 
@@ -86,7 +89,7 @@ class ApicProcess(Apicexporter):
                 continue
 
             # export only existing metrics
-            if not self.apicHosts[apicHost]['procMetrics']:
+            if not 'procMetrics' in self.apicHosts[apicHost] or not self.apicHosts[apicHost]['procMetrics']:
                 logging.debug("Host % has no metrics to export", self.apicHosts[apicHost]['name'])
             else:
                 for metric in self.apicHosts[apicHost]['procMetrics']:
