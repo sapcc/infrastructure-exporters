@@ -42,6 +42,7 @@ class Apicexporter(exporter.Exporter):
         except requests.exceptions.ConnectionError as e:
             logging.error("Problem connecting to %s: %s", apiLoginUrl, repr(e))
             self.apicHosts[apicHost]['status_code'] = 500
+            return None
 
         self.apicHosts[apicHost]['status_code'] = r.status_code
         if r.status_code == 200:
