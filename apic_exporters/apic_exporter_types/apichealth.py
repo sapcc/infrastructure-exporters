@@ -22,10 +22,7 @@ class Apichealth(Apicexporter):
         self.gauge['network_apic_physcial_interface_resets'] = Gauge('network_apic_physcial_interface_resets',
                                                                     'network_apic_physcial_interface_resets',
                                                                     ['interfaceID'])
-        self.gauge['network_apic_duplicate_ip'] = Gauge('network_apic_duplicate_ip',
-                                                         'network_apic_duplicate_ip',
-                                                         ['apic_host', 'ip', 'mac', 'node_id', 'tenant'])
-                                    
+
     def collect(self):
         self.metric_count = 0
         for apicHost in self.apicHosts:
@@ -62,33 +59,6 @@ class Apichealth(Apicexporter):
             else:
                 self.apicHosts[apicHost]['physIfInfo_status'] = 0
 
-            duplicateIpsUrl = 'https://' + self.apicHosts[apicHost]['name'] + '/api/node/class/fvIp.json?rsp-subtree=full&'
-            duplicateIpsUrl += 'rsp-subtree-class=fvReportingNode&query-target-filter=and(ne(fvIp.debugMACMessage,""))'
-            duplicateIpsInfo = self.apicGetRequest(duplicateIpsUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'],apicHost)
-            if self.isDataValid(self.apicHosts[apicHost]['status_code'], duplicateIpsInfo):
-                self.apicHosts[apicHost]['duplicateIpsInfo_status'] = 200
-                for duplicateIp in duplicateIpsInfo['imdata']:
-                    ipAddres = duplicateIp['fvIp']['attributes']['addr']
-                    ipDn = duplicateIp['fvIp']['attributes']['dn']
-                    ipMac = re.search(r"([0-9A-F]{2}:){5}[0-9A-F]{2}", ipDn).group()
-                    ipTenat = re.match(r"uni\/tn-(.+)\/ap.+", ipDn)[1]
-                    #ipNode = duplicateIp['fvIp']['children'][0]['fvReportingNode']['attributes']['id']
-                    #self.apicHosts[apicHost]['duplicateIps'].append({'ip':ipAddres, 'mac':ipMac, 'apicNode':ipNode})
-                    ipNodes = []
-                    if 'children' in duplicateIp['fvIp']:
-                        for child in duplicateIp['fvIp']['children']:
-                            reporting_node_id = child['fvReportingNode']['attributes']['id']
-                            ipNodes.append(str(reporting_node_id))
-
-                    if not ipNodes:
-                        self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': '+'.join(ipNodes), 'tn': ipTenat})
-                    else:
-                        self.apicHosts[apicHost]['duplicateIps'].append({'ip': ipAddres, 'mac': ipMac, 'apicNode': 'none', 'tn': ipTenat})
-
-                self.metric_count += 1
-            else:
-                self.apicHosts[apicHost]['duplicateIpsInfo_status'] = 0
-
     def export(self):
         for apicHost in self.apicHosts:
             self.counter['network_apic_status'].labels(self.apicHosts[apicHost]['name'],
@@ -112,14 +82,6 @@ class Apichealth(Apicexporter):
                 for physIf in self.apicHosts[apicHost]['physIf']:
                     physIfLabel = self.apicHosts[apicHost]['name'] + "-" + physIf['dn']
                     self.gauge['network_apic_physcial_interface_resets'].labels(physIfLabel).set(physIf['resetCtr'])       
-
-            if self.apicHosts[apicHost]['duplicateIpsInfo_status'] == 200:
-                for duplicateIp in self.apicHosts[apicHost]['duplicateIps']:
-                    self.gauge['network_apic_duplicate_ip'].labels(self.apicHosts[apicHost]['name'],
-                                                                duplicateIp['ip'],
-                                                                duplicateIp['mac'],
-                                                                duplicateIp['apicNode'],
-                                                                duplicateIp['tn']).set(1)
 
     def isDataValid(self, status_code, data):
         if status_code == 200 and isinstance(data, dict) and isinstance(data.get('imdata'), list):
