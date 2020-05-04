@@ -88,7 +88,8 @@ if __name__ == "__main__":
             threads = []
             for exportertype in args.exportertype:
                 infraExporter = EXPORTERS[exportertype.lower()](exportertype.lower(), args.singleconfifigfile)
-                threads.append(Thread(target=run_loop, args=(infraExporter, infraExporter.duration)))
+                if infraExporter.enabled:
+                    threads.append(Thread(target=run_loop, args=(infraExporter, infraExporter.duration)))
 
             for thread in threads:
                 thread.start()

@@ -17,6 +17,7 @@ class Apicexporter(exporter.Exporter):
         self.apicInfo['proxy']['no'] = self.apicInfo['proxy'].pop('no_proxy')
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
         self.duration = int(self.exporterInfo['collection_interval'])
+        self.enabled  = bool(self.exporterInfo['enabled'])
         self.apicHosts = {}
         for apicHost in self.apicInfo['hosts'].split(","):
             self.apicHosts[apicHost] = {}
