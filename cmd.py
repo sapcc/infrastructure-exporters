@@ -89,6 +89,7 @@ if __name__ == "__main__":
             for exportertype in args.exportertype:
                 infraExporter = EXPORTERS[exportertype.lower()](exportertype.lower(), args.singleconfifigfile)
                 if infraExporter.enabled:
+                    logging.info('=> Start exporter: %s', exportertype)
                     threads.append(Thread(target=run_loop, args=(infraExporter, infraExporter.duration)))
 
             for thread in threads:
