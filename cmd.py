@@ -25,9 +25,10 @@ EXPORTERS = {
 def run_loop(exporterInstance, duration):
     # Start infinite loop to get metrics
     while True:
-        logging.info('====> Starting run_loop: ' +
-                     exporterInstance.exporterType + ": " +
-                     str(datetime.now()))
+        logging.info("%s: ==> Starting run_loop at %s", exporterInstance.exporterType, datetime.now())
+#        logging.info('====> Starting run_loop: ' +
+#                     exporterInstance.exporterType + ": " +
+#                     str(datetime.now()))
         # get the start time of the loop to be
         # able to fill it to intervall exactly at the end
 
@@ -63,8 +64,9 @@ def run_loop(exporterInstance, duration):
         # Sleep until collection duration
         # await asyncio.sleep(int(loop_sleep_time))
         time.sleep(int(loop_sleep_time))
-        logging.info('====> Ending run_loop: ' +
-                     exporterInstance.exporterType + ": " + str(datetime.now()))
+        logging.info("%s: ==> Ending run_loop at %s", exporterInstance.exporterType, datetime.now())
+#        logging.info('====> Ending run_loop: ' +
+#                     exporterInstance.exporterType + ": " + str(datetime.now()))
 
 if __name__ == "__main__":
 
