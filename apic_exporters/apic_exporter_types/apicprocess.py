@@ -9,13 +9,13 @@ class ApicProcess(Apicexporter):
         self.counter, self.gauge = {}, {}
 
         self.gauge['network_apic_process_memory_used_min'] = Gauge('network_apic_process_memory_used_min',
-                                                         'network_apic_process_memory_used_min', ['apicHost', 'procName', 'procDn'])
+                                                         'network_apic_process_memory_used_min', ['apicHost', 'procName', 'nodeId'])
 
         self.gauge['network_apic_process_memory_used_max'] = Gauge('network_apic_process_memory_used_max',
-                                                         'network_apic_process_memory_used_max', ['apicHost', 'procName', 'procDn'])
+                                                         'network_apic_process_memory_used_max', ['apicHost', 'procName', 'nodeId'])
 
         self.gauge['network_apic_process_memory_used_avg'] = Gauge('network_apic_process_memory_used_avg',
-                                                         'network_apic_process_memory_used_avg', ['apicHost', 'procName', 'procDn'])
+                                                         'network_apic_process_memory_used_avg', ['apicHost', 'procName', 'nodeId'])
 
 
     def collect(self):
@@ -59,16 +59,16 @@ class ApicProcess(Apicexporter):
                         continue
 
                     if int(apicNfmProcessMemoryUsed['totalCount']) > 0:
-                        logging.debug("procName: %s, procDn: %s, MemUsedMin: %s, MemUsedMax: %s, MemUsedAvg: %s",
-                            apicNfmProcess['imdata'][0]['procProc']['attributes']['name'],
-                            apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'],
+                        nodeId = self.parseNodeId(apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'])
+                        logging.debug("procName: %s, nodeId: %s, MemUsedMin: %s, MemUsedMax: %s, MemUsedAvg: %s",
+                            apicNfmProcess['imdata'][0]['procProc']['attributes']['name'], nodeId,
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMin'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMax'],
                             apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg'])
 
                         self.apicHosts[apicHost]['procMetrics'].append({
                             'procName':   apicNfmProcess['imdata'][0]['procProc']['attributes']['name'],
-                            'procDn':     apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'],
+                            'nodeId':     nodeId,
                             'memUsedMin': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMin'],
                             'memUsedMax': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedMax'],
                             'memUsedAvg': apicNfmProcessMemoryUsed['imdata'][0]['procProcMemHist5min']['attributes']['usedAvg']
@@ -96,23 +96,29 @@ class ApicProcess(Apicexporter):
                     self.gauge['network_apic_process_memory_used_min'].labels(
                         self.apicHosts[apicHost]['name'],
                         metric['procName'],
-                        metric['procDn']
+                        metric['nodeId']
                     ).set(metric['memUsedMin'])
 
                     self.gauge['network_apic_process_memory_used_max'].labels(
                         self.apicHosts[apicHost]['name'],
                         metric['procName'],
-                        metric['procDn']
+                        metric['nodeId']
                     ).set(metric['memUsedMax'])
 
                     self.gauge['network_apic_process_memory_used_avg'].labels(
                         self.apicHosts[apicHost]['name'],
                         metric['procName'],
-                        metric['procDn']
+                        metric['nodeId']
                     ).set(metric['memUsedAvg'])
 
     def isDataValid(self, status_code, data):
         if status_code == 200 and isinstance(data, dict) and isinstance(data.get('imdata'), list):
             return True
         return False
-                    
+
+    def parseNodeId(self, procDn):
+        nodeId =''
+        matchObj = re.match(u".+node-([0-9]*).+", procDn)
+        if matchObj:
+            nodeId = matchObj.group(1)
+        return nodeId
