@@ -79,7 +79,7 @@ class ApicIp(Apicexporter):
                 logging.debug("Host % has no metrics to export", self.apicHosts[apicHost]['name'])
             else:
                 for duplicateIp in self.apicHosts[apicHost]['duplicateIps']:
-                    self.gauge['network_apic_duplicate_ip'].labels(
+                    self.counter['network_apic_duplicate_ip'].labels(
                         self.apicHosts[apicHost]['name'],
                         duplicateIp['ip'],
                         duplicateIp['mac'],
