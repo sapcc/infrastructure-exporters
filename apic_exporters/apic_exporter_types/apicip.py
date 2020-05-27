@@ -52,6 +52,8 @@ class ApicIp(Apicexporter):
                             'apicNode': '+'.join(ipNodes),
                             'tn': ipTenat
                         })
+                        logging.debug("host: %s, ip: %s, mac: %s, nodes: %s", self.apicHosts[apicHost]['name'],
+                                      ipAddres, ipMac, '+'.join(ipNodes))
                     else:
                         self.apicHosts[apicHost]['duplicateIps'].append({
                             'ip': ipAddres,
@@ -59,6 +61,8 @@ class ApicIp(Apicexporter):
                             'apicNode': 'none',
                             'tn': ipTenat
                         })
+                        logging.debug("host: %s, ip: %s, mac: %s, nodes: %s", self.apicHosts[apicHost]['name'],
+                                      ipAddres, ipMac, 'none')
 
                     self.metric_count += 1
                     logging.debug("duplicate ip metric count: %s", self.metric_count)
