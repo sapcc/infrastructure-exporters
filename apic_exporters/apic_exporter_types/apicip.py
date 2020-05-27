@@ -45,7 +45,7 @@ class ApicIp(Apicexporter):
                             reporting_node_id = child['fvReportingNode']['attributes']['id']
                             ipNodes.append(str(reporting_node_id))
 
-                    if not ipNodes:
+                    if ipNodes:
                         self.apicHosts[apicHost]['duplicateIps'].append({
                             'ip': ipAddres,
                             'mac': ipMac,
