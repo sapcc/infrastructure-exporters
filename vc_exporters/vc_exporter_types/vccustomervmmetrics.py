@@ -114,26 +114,34 @@ class Vccustomervmmetrics(VCExporter):
         for group in self.chuncker(self.data, 50):
             perfQueries = []
             for item in group:
-                if (item["runtime.powerState"] == "poweredOn" and
-                         self.regexs['openstack_match_regex'].match(item["config.annotation"])
-                         ) and not self.regexs['ignore_vm_match_regex'].match(item["config.name"]):
-                    metric_ids = [
-                            vim.PerformanceManager.MetricId(
-                                counterId=i, instance="*") for i
-                                in self.counter_ids_to_collect
-                        ]
-                    vm_instance = self.mors[item["obj"]]
-                    spec = vim.PerformanceManager.QuerySpec(
-                            maxSample=1,
-                            entity=vm_instance,
-                            metricId=metric_ids,
-                            intervalId=20,
-                            startTime=start_time,
-                            endTime=end_time)
-                    perfQueries.append(spec)
-                    self.metric_count += 1
-            if len(perfQueries) > 0:
-                queryResult.append(perf_manager.QueryStats(querySpec=perfQueries))
+                try:
+                    if (item["runtime.powerState"] == "poweredOn" and
+                             self.regexs['openstack_match_regex'].match(item["config.annotation"])
+                             ) and not self.regexs['ignore_vm_match_regex'].match(item["config.name"]):
+                        metric_ids = [
+                                vim.PerformanceManager.MetricId(
+                                    counterId=i, instance="*") for i
+                                    in self.counter_ids_to_collect
+                            ]
+                        vm_instance = self.mors[item["obj"]]
+                        spec = vim.PerformanceManager.QuerySpec(
+                                maxSample=1,
+                                entity=vm_instance,
+                                metricId=metric_ids,
+                                intervalId=20,
+                                startTime=start_time,
+                                endTime=end_time)
+                        perfQueries.append(spec)
+                        self.metric_count += 1
+                    if len(perfQueries) > 0:
+                        queryResult.append(perf_manager.QueryStats(querySpec=perfQueries))
+
+                # some vms do not have config.name define -
+                # we are not interested in them and can ignore them
+                except KeyError as e:
+                    logging.debug("property not defined for vm: " + str(e))
+                except Exception as e:
+                    logging.info("couldn't get perf data: " + str(e))
 
         for group in queryResult:
             for vm in group:
