@@ -2,6 +2,7 @@ import logging
 import re
 from vc_exporters.vc_exporter import VCExporter
 from prometheus_client import Gauge
+from datetime import datetime
 from pyVmomi import vim
 
 class Vccustomerdsmetrics(VCExporter):
