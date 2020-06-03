@@ -14,6 +14,7 @@ class VCExporter(exporter.Exporter):
         self.vcenterInfo = self.exporterConfig['device_information']
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
         self.duration = int(self.exporterInfo['collection_interval'])
+        self.enabled  = bool(self.exporterInfo['enabled'])
         self.si = self.connect_to_vcenter(self.vcenterInfo['hostname'],
                                           self.vcenterInfo['username'],
                                           self.vcenterInfo['password'],
