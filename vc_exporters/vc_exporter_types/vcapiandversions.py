@@ -411,6 +411,7 @@ class Vcapiandversions(VCExporter):
                 if hasattr(vm.summary.config, 'memorySizeMB') and hasattr(vm.runtime, 'powerState'):
                     if vm.summary.config.memorySizeMB and vm.runtime.powerState == 'poweredOn':
                         if vm.summary.config.memorySizeMB >= 231056:
+                            logging.debug("VM: %s ConfigMemorySizeMB: %s", vm.name, vm.summary.config.memorySizeMB)
                             host_vms_sum_mb += vm.summary.config.memorySizeMB
             except Exception as e:
                 #for now i want to see it regardless of logging
