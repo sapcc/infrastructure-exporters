@@ -6,7 +6,8 @@ from datetime import datetime
 from vc_exporters.vc_exporter_types import (vcapiandversions,
                                             vccustomervmmetrics,
                                             vccustomerdsmetrics,
-                                            vchostmetrics)
+                                            vchostmetrics,
+                                            vcdatastoremetrics)
 from apic_exporters.apic_exporter_types import apichealth
 from apic_exporters.apic_exporter_types import apicprocess
 from apic_exporters.apic_exporter_types import apicip
@@ -18,7 +19,8 @@ EXPORTERS = {
     'apichealth': apichealth.Apichealth,
     'apicprocess': apicprocess.ApicProcess,
     'apicip': apicip.ApicIp,
-    'vchostmetrics': vchostmetrics.VcHostMetrics
+    'vchostmetrics': vchostmetrics.VcHostMetrics,
+    'vcdatastoremetrics': vcdatastoremetrics.VcDatastoreMetrics,
 }
 
 
