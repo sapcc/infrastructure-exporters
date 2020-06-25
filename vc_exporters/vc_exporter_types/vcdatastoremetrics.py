@@ -27,6 +27,11 @@ class VcDatastoreMetrics(VCExporter):
                                                            'vcenter_datastore_free_space_bytes',
                                                            ['region', 'name', 'type'])
 
+        self.gauge['vcenter_datastore_hosts_mounted'] = Gauge('vcenter_datastore_hosts_mounted',
+                                                           'vcenter_datastore_hosts_mounted',
+                                                           ['region', 'name', 'type'])
+
+
         self.gauge['vcenter_datastore_vm_stored'] = Gauge('vcenter_datastore_vm_stored',
                                                            'vcenter_datastore_vm_stored',
                                                            ['region', 'name', 'type'])
@@ -40,6 +45,7 @@ class VcDatastoreMetrics(VCExporter):
             "summary.maintenanceMode",
             "summary.capacity",
             "summary.freeSpace",
+            "host",
             "vm"
         ]
 
@@ -104,6 +110,14 @@ class VcDatastoreMetrics(VCExporter):
                 self.gauge['vcenter_datastore_vm_stored'].labels(region, datastore['summary.name'],
                                                                  datastore['summary.type']).set(len(datastore['vm']))
 
+                # number of hosts mounted to the datastore
+                self.gauge['vcenter_datastore_hosts_mounted'].labels(region, datastore['summary.name'],
+                                                                 datastore['summary.type']).set(len(datastore['host']))
+
+                for host in datastore['host']:
+                    logging.debug("Mounted host: %s, inMaintenance: %s, can access ds: %s" %(host.key.name,
+                                                                                                     host.key.runtime.inMaintenanceMode,
+                                                                                                     host.mountInfo.accessible))
 
             except Exception as e:
                 logging.debug('Could not get data for datastore %s' % str(e))
