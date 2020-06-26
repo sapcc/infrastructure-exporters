@@ -9,6 +9,33 @@ class VcDatastoreMetrics(VCExporter):
     def __init__(self, exporterType, exporterConfig):
         super().__init__(exporterType, exporterConfig)
 
+        self.gauge = {}
+
+        self.gauge['vcenter_datastore_accessible'] = Gauge('vcenter_datastore_accessible',
+                                                           'vcenter_datastore_accessible',
+                                                           ['region', 'name', 'type'])
+
+        self.gauge['vcenter_datastore_maintenance'] = Gauge('vcenter_datastore_maintenance',
+                                                           'vcenter_datastore_maintenance',
+                                                           ['region', 'name', 'type'])
+
+        self.gauge['vcenter_datastore_capacity_bytes'] = Gauge('vcenter_datastore_capacity_bytes',
+                                                           'vcenter_datastore_capacity_bytes',
+                                                           ['region', 'name', 'type'])
+
+        self.gauge['vcenter_datastore_free_space_bytes'] = Gauge('vcenter_datastore_free_space_bytes',
+                                                           'vcenter_datastore_free_space_bytes',
+                                                           ['region', 'name', 'type'])
+
+        self.gauge['vcenter_datastore_accessible_from_host'] = Gauge('vcenter_datastore_accessible_from_host',
+                                                           'vcenter_datastore_accessible_from_host',
+                                                           ['region', 'name', 'type', 'host'])
+
+
+        self.gauge['vcenter_datastore_vm_stored'] = Gauge('vcenter_datastore_vm_stored',
+                                                           'vcenter_datastore_vm_stored',
+                                                           ['region', 'name', 'type'])
+
         self.datastore_properties =[
             "summary.name",
             "summary.type",
@@ -37,33 +64,6 @@ class VcDatastoreMetrics(VCExporter):
 
         self.metric_count = 0
         region = self.vcenterInfo['hostname'].split('.')[2]
-
-        self.gauge = {}
-
-        self.gauge['vcenter_datastore_accessible'] = Gauge('vcenter_datastore_accessible',
-                                                           'vcenter_datastore_accessible',
-                                                           ['region', 'name', 'type'])
-
-        self.gauge['vcenter_datastore_maintenance'] = Gauge('vcenter_datastore_maintenance',
-                                                           'vcenter_datastore_maintenance',
-                                                           ['region', 'name', 'type'])
-
-        self.gauge['vcenter_datastore_capacity_bytes'] = Gauge('vcenter_datastore_capacity_bytes',
-                                                           'vcenter_datastore_capacity_bytes',
-                                                           ['region', 'name', 'type'])
-
-        self.gauge['vcenter_datastore_free_space_bytes'] = Gauge('vcenter_datastore_free_space_bytes',
-                                                           'vcenter_datastore_free_space_bytes',
-                                                           ['region', 'name', 'type'])
-
-        self.gauge['vcenter_datastore_accessible_from_host'] = Gauge('vcenter_datastore_accessible_from_host',
-                                                           'vcenter_datastore_accessible_from_host',
-                                                           ['region', 'name', 'type', 'host'])
-
-
-        self.gauge['vcenter_datastore_vm_stored'] = Gauge('vcenter_datastore_vm_stored',
-                                                           'vcenter_datastore_vm_stored',
-                                                           ['region', 'name', 'type'])
 
         for datastore in self.data:
             # discard management datastores
