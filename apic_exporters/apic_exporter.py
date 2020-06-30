@@ -53,6 +53,8 @@ class Apicexporter(exporter.Exporter):
             self.apicHosts[apicHost]['canConnectToAPIC'] = False
             return None
 
+        self.apicHosts[apicHost]['canConnectToAPIC'] = True
+
         self.apicHosts[apicHost]['status_code'] = r.status_code
         if r.status_code == 200:
             result = json.loads(r.text)
@@ -74,6 +76,8 @@ class Apicexporter(exporter.Exporter):
             self.apicHosts[apicHost]['status_code'] = 500
             self.apicHosts[apicHost]['canConnectToAPIC'] = False
             return None
+
+        self.apicHosts[apicHost]['canConnectToAPIC'] = True
 
         if r.status_code == 403 and ("Token was invalid" in r.text or "token" in r.text):
             apicCookie = self.getApicCookie(apicHost,
