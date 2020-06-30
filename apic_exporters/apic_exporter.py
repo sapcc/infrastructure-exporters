@@ -72,6 +72,7 @@ class Apicexporter(exporter.Exporter):
         except Exception as e:
             logging.error("Problem connecting to %s: %s", url, repr(e))
             self.apicHosts[apicHost]['status_code'] = 500
+            self.apicHosts[apicHost]['canConnectToAPIC'] = False
             return None
 
         if r.status_code == 403 and ("Token was invalid" in r.text or "token" in r.text):
