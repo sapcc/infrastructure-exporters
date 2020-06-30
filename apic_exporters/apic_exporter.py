@@ -3,6 +3,7 @@ import socket
 import requests
 import logging
 import json
+import copy
 from prometheus_client import start_http_server
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -15,18 +16,24 @@ class Apicexporter(exporter.Exporter):
         self.apicInfo = self.exporterConfig['device_information']
         # Convert proxy none key to no (for compliance with api)
         self.apicInfo['proxy']['no'] = self.apicInfo['proxy'].pop('no_proxy')
+
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
         self.duration = int(self.exporterInfo['collection_interval'])
         self.enabled  = bool(self.exporterInfo['enabled'])
+
         self.apicHosts = {}
         for apicHost in self.apicInfo['hosts'].split(","):
             self.apicHosts[apicHost] = {}
             self.apicHosts[apicHost]['name'] = apicHost
             self.apicHosts[apicHost]['canConnectToAPIC'] = True
-            self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost,
-                                                        self.apicInfo['username'],
+            self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost, self.apicInfo['username'],
                                                         self.apicInfo['password'],
                                                         self.apicInfo['proxy'])   # Need to regex replce none with no
+
+        # get the current APICs
+        self.getCurrentApicToplogy()
+
+        # start the prometheus
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(('localhost', int(self.exporterConfig['prometheus_port']))) != 0:
                 start_http_server(int(self.exporterConfig['prometheus_port']))
@@ -43,6 +50,7 @@ class Apicexporter(exporter.Exporter):
         except requests.exceptions.ConnectionError as e:
             logging.error("Problem connecting to %s: %s", apiLoginUrl, repr(e))
             self.apicHosts[apicHost]['status_code'] = 500
+            self.apicHosts[apicHost]['canConnectToAPIC'] = False
             return None
 
         self.apicHosts[apicHost]['status_code'] = r.status_code
@@ -79,6 +87,7 @@ class Apicexporter(exporter.Exporter):
         except Exception as e:
             logging.error("Problem connecting to %s: %s", url, repr(e))
             self.apicHosts[apicHost]['status_code'] = 500
+            self.apicHosts[apicHost]['canConnectToAPIC'] = False
             return None
 
         self.apicHosts[apicHost]['status_code'] = r.status_code
@@ -89,3 +98,52 @@ class Apicexporter(exporter.Exporter):
         else:
             logging.error("url %s responding with %s", url, r.status_code)
             return None
+
+    def getCurrentApicToplogy(self):
+
+        for apicHost in self.apicHosts.keys():
+
+            url = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/topSystem.json?query-target-filter=eq(topSystem.role,\"controller\")"
+            res = self.apicGetRequest(url, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
+
+            if res is not None:
+                for item in res['imdata']:
+                    addr = item['topSystem']['attributes']['oobMgmtAddr']
+                    if addr in self.apicHosts.keys():
+                        self.apicHosts[addr]['apicMode']         = 'active'
+                    else:
+                        self.apicHosts[addr] = {}
+                        self.apicHosts[addr]['name']             = addr
+                        self.apicHosts[addr]['apicMode']         = 'active'
+                        self.apicHosts[addr]['canConnectToAPIC'] = True
+                        self.apicHosts[addr]['loginCookie']      = self.getApicCookie(addr,
+                                                                                      self.apicInfo['username'],
+                                                                                      self.apicInfo['password'],
+                                                                                      self.apicInfo['proxy'])
+
+            url = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/infraSnNode.json"
+            res = self.apicGetRequest(url, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
+
+            if res is not None:
+                for item in res['imdata']:
+                    addr = (item['infraSnNode']['attributes']['oobIpAddr']).split("/")[0]
+                    if addr == "0.0.0.0":
+                        continue
+                    mode = item['infraSnNode']['attributes']['apicMode']
+                    if addr in self.apicHosts.keys():
+                        self.apicHosts[addr]['apicMode']         = mode
+                    else:
+                        self.apicHosts[addr] = {}
+                        self.apicHosts[addr]['name']             = addr
+                        self.apicHosts[addr]['apicMode']         = mode
+                        self.apicHosts[addr]['canConnectToAPIC'] = True
+                        self.apicHosts[addr]['loginCookie']      = self.getApicCookie(addr,
+                                                                                        self.apicInfo['username'],
+                                                                                        self.apicInfo['password'],
+                                                                                        self.apicInfo['proxy'])
+
+    def getActiveApicHosts(self):
+        return {a: b for a, b in self.apicHosts.items() if b['apicMode'] == 'active'}
+
+    def getStandbyApicHosts(self):
+        return {a: b for a, b in self.apicHosts.items() if b['apicMode'] == 'standby'}
