@@ -20,7 +20,8 @@ class ApicProcess(Apicexporter):
 
     def collect(self):
         self.metric_count = 0
-        for apicHost in self.apicHosts:
+
+        for apicHost in self.getActiveApicHosts():
             self.apicHosts[apicHost]['procMetrics'] = []
 
             if self.apicHosts[apicHost]['canConnectToAPIC'] == False:
