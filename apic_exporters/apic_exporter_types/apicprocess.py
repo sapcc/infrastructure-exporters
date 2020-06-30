@@ -31,9 +31,7 @@ class ApicProcess(Apicexporter):
             apicNodeUrl  = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/fabricNode.json?"
             apicNodes    = self.apicGetRequest(apicNodeUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
-            # apic is not responding
-            if self.apicHosts[apicHost]['status_code'] != 200 or apicNodes is None:
-                logging.debug("apic host %s is not responding", self.apicHosts[apicHost]['name'])
+            if not self.isDataValid(self.apicHosts[apicHost]['status_code'], apicNodes):
                 continue
 
             for node in apicNodes['imdata']:
@@ -41,11 +39,11 @@ class ApicProcess(Apicexporter):
 
                 # get nfm process is per node
                 apicNfmProcessUrl = 'https://' + self.apicHosts[apicHost]['name'] + '/api/node/class/' \
-                    + node['fabricNode']['attributes']['dn'] + '/procProc.json?query-target-filter=eq(procProc.name,"nfm")'
+                        + node['fabricNode']['attributes']['dn'] + '/procProc.json?query-target-filter=eq(procProc.name,"nfm")'
                 apicNfmProcess = self.apicGetRequest(apicNfmProcessUrl, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
-                if apicNfmProcess is None:
-                    logging.debug("Node %s has No nfm process", node['fabricNode']['attributes']['dn'])
+                if not self.isDataValid(self.apicHosts[apicHost]['status_code'], apicNfmProcess):
+                    logging.debug("Node %s has no nfm process", node['fabricNode']['attributes']['dn'])
                     continue
 
                 if int(apicNfmProcess['totalCount']) > 0:
@@ -55,7 +53,7 @@ class ApicProcess(Apicexporter):
                         + apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'] + '/HDprocProcMem5min-0.json'
                     apicNfmProcessMemoryUsed = self.apicGetRequest(apicNfmProcessMemoryUsedURL, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
-                    if apicNfmProcessMemoryUsed is None:
+                    if not self.isDataValid(self.apicHosts[apicHost]['status_code'], apicNfmProcessMemoryUsed):
                         logging.debug("Process %s has no used memory info", apicNfmProcess['imdata'][0]['procProc']['attributes']['dn'])
                         continue
 
@@ -82,16 +80,16 @@ class ApicProcess(Apicexporter):
             break
 
     def export(self):
-        for apicHost in self.apicHosts:
+        for apicHost in self.getActiveApicHosts():
 
             # dont export metrics for apics not responding
-            if self.apicHosts[apicHost]['status_code'] != 200:
+            if self.apicHosts[apicHost]['canConnectToAPIC'] == False or self.apicHosts[apicHost]['status_code'] != 200:
                 logging.debug("Host %s not responding - no metrics to export", self.apicHosts[apicHost]['name'])
                 continue
 
             # export only existing metrics
             if not 'procMetrics' in self.apicHosts[apicHost] or not self.apicHosts[apicHost]['procMetrics']:
-                logging.debug("Host % has no metrics to export", self.apicHosts[apicHost]['name'])
+                logging.debug("Host % has no procMetrics to export", self.apicHosts[apicHost]['name'])
             else:
                 for metric in self.apicHosts[apicHost]['procMetrics']:
                     self.gauge['network_apic_process_memory_used_min'].labels(
@@ -113,7 +111,11 @@ class ApicProcess(Apicexporter):
                     ).set(metric['memUsedAvg'])
 
     def isDataValid(self, status_code, data):
-        if status_code == 200 and isinstance(data, dict) and isinstance(data.get('imdata'), list):
+        if data is None:
+            return False
+        if status_code != 200:
+            return False
+        if isinstance(data, dict) and isinstance(data.get('imdata'), list):
             return True
         return False
 
