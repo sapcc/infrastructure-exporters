@@ -44,11 +44,11 @@ class Vcapiandversions(VCExporter):
 
         self.gauge['vcenter_vms_on_failover_hosts'] = Gauge('vcenter_vms_on_failover_hosts',
                                                                 'Count of VMs placed on failover hosts, they shouldn\'t be there',
-                                                                ['hostname','cluster','failover_host'])
+                                                                ['hostname','vccluster','failover_host'])
 
         self.gauge['vcenter_failover_host'] = Gauge('vcenter_failover_host',
                                                         'Count of failover hosts in prod clusters',
-                                                        ['hostname','cluster'])
+                                                        ['hostname','vccluster'])
 
         self.gauge['vcenter_prod_cluster'] = Gauge('vcenter_prod_cluster',
                                                     'Count of prod cluster in a vcenter',
@@ -56,7 +56,7 @@ class Vcapiandversions(VCExporter):
 
         self.gauge['vcenter_failover_nodes_set'] = Gauge('vcenter_failover_nodes_set',
                                                     'Count of configured failover nodes in the cluster',
-                                                    ['hostname', 'cluster'])
+                                                    ['hostname', 'vccluster'])
 
         self.gauge['vcenter_overbooked_node_mb'] = Gauge('vcenter_overbooked_node_mb',
                                                     'Node where memory of big VMs exceeds physical memory in MB',
@@ -64,7 +64,7 @@ class Vcapiandversions(VCExporter):
 
         self.gauge['vcenter_cluster_ha_configured'] = Gauge('vcenter_cluster_ha_configured',
                                                     'Cluster with correct HA policy set',
-                                                    ['hostname', 'cluster'])
+                                                    ['hostname', 'vccluster'])
 
         self.content = self.si.RetrieveContent()
         self.clusters = [cluster for cluster in
