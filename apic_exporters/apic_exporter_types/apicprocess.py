@@ -89,7 +89,7 @@ class ApicProcess(Apicexporter):
 
             # export only existing metrics
             if not 'procMetrics' in self.apicHosts[apicHost] or not self.apicHosts[apicHost]['procMetrics']:
-                logging.debug("Host % has no procMetrics to export", self.apicHosts[apicHost]['name'])
+                logging.debug("Host %s has no procMetrics to export", self.apicHosts[apicHost]['name'])
             else:
                 for metric in self.apicHosts[apicHost]['procMetrics']:
                     self.gauge['network_apic_process_memory_used_min'].labels(

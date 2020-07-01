@@ -79,7 +79,7 @@ class ApicIp(Apicexporter):
 
             # export only existing metrics
             if not 'duplicateIps' in self.apicHosts[apicHost] or not self.apicHosts[apicHost]['duplicateIps']:
-                logging.debug("Host % has no duplicateIp to export", self.apicHosts[apicHost]['name'])
+                logging.debug("Host %s has no duplicateIp to export", self.apicHosts[apicHost]['name'])
             else:
                 for duplicateIp in self.apicHosts[apicHost]['duplicateIps']:
                     self.counter['network_apic_duplicate_ip'].labels(
