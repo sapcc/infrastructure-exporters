@@ -64,14 +64,17 @@ class ApicIp(Apicexporter):
                                       ipAddres, ipMac, 'none')
 
                     self.metric_count += 1
-                    logging.debug("duplicate ip metric count: %s", self.metric_count)
+                    logging.debug("apic host %s duplicate ip metric count: %s", self.apicHosts[apicHost]['name'], self.metric_count)
+
+                    # all apic hosts are seeing the same nodes
+                    break
 
     def export(self):
         for apicHost in self.getActiveApicHosts():
 
             # dont export metrics for apics not responding
             if self.apicHosts[apicHost]['canConnectToAPIC'] == False or self.apicHosts[apicHost]['status_code'] != 200:
-                logging.debug("Host %s not responding - no metrics to export", self.apicHosts[apicHost]['name'])
+                logging.debug("Host %s not responding - no duplicate ip metrics to export", self.apicHosts[apicHost]['name'])
                 continue
 
             # export only existing metrics
