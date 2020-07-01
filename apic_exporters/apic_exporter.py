@@ -10,6 +10,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Apicexporter(exporter.Exporter):
 
+    CONNECTION_THRESHOLD = 100
+
     def __init__(self, exporterType, exporterConfig):
         super().__init__(exporterType, exporterConfig)
         self.apicInfo = self.exporterConfig['device_information']
@@ -25,6 +27,7 @@ class Apicexporter(exporter.Exporter):
             self.apicHosts[apicHost] = {}
             self.apicHosts[apicHost]['name'] = apicHost
             self.apicHosts[apicHost]['canConnectToAPIC'] = True
+            self.apicHosts[apicHost]['canConnectToAPICCounter'] = 0
             self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost, self.apicInfo['username'],
                                                         self.apicInfo['password'],
                                                         self.apicInfo['proxy'])   # Need to regex replce none with no
@@ -50,11 +53,13 @@ class Apicexporter(exporter.Exporter):
             logging.error("Problem connecting to %s: %s", apiLoginUrl, repr(e))
             self.apicHosts[apicHost]['status_code'] = 500
             self.apicHosts[apicHost]['canConnectToAPIC'] = False
+            self.apicHosts[apicHost]['cannotConnectToAPICCounter'] += 1
             return None
 
-        self.apicHosts[apicHost]['canConnectToAPIC'] = True
+        self.apicHosts[apicHost]['canConnectToAPIC']           = True
+        self.apicHosts[apicHost]['cannotConnectToAPICCounter'] = 0
+        self.apicHosts[apicHost]['status_code']                = r.status_code
 
-        self.apicHosts[apicHost]['status_code'] = r.status_code
         if r.status_code == 200:
             result = json.loads(r.text)
             r.close()
@@ -74,9 +79,11 @@ class Apicexporter(exporter.Exporter):
             logging.error("Problem connecting to %s: %s", url, repr(e))
             self.apicHosts[apicHost]['status_code'] = 500
             self.apicHosts[apicHost]['canConnectToAPIC'] = False
+            self.apicHosts[apicHost]['cannotConnectToAPICCounter'] += 1
             return None
 
-        self.apicHosts[apicHost]['canConnectToAPIC'] = True
+        self.apicHosts[apicHost]['canConnectToAPIC']           = True
+        self.apicHosts[apicHost]['cannotConnectToAPICCounter'] = 0
 
         if r.status_code == 403 and ("Token was invalid" in r.text or "token" in r.text):
             apicCookie = self.getApicCookie(apicHost,
@@ -94,7 +101,10 @@ class Apicexporter(exporter.Exporter):
             self.apicHosts[apicHost]['canConnectToAPIC'] = False
             return None
 
-        self.apicHosts[apicHost]['status_code'] = r.status_code
+        self.apicHosts[apicHost]['canConnectToAPIC']           = True
+        self.apicHosts[apicHost]['cannotConnectToAPICCounter'] = 0
+        self.apicHosts[apicHost]['status_code']                = r.status_code
+
         if r.status_code == 200:
             result = json.loads(r.text)
             r.close()
@@ -104,6 +114,9 @@ class Apicexporter(exporter.Exporter):
             return None
 
     def getCurrentApicToplogy(self):
+        # remove apic hosts not responding for a long time
+        #self.apicHosts = self.removeOpphanedApicHosts()
+
         # snapshot of apic host keys since new hosts will be discovered
         apicHosts = list(self.apicHosts.keys())
 
@@ -155,3 +168,6 @@ class Apicexporter(exporter.Exporter):
 
     def getStandbyApicHosts(self):
         return {a: b for a, b in self.apicHosts.items() if b['apicMode'] == 'standby'}
+
+    def removeOpphanedApicHosts(self):
+        return {a: b for a, b in self.apicHosts.items() if (b['canConnectToAPIC'] == True or (b['canConnectToAPIC'] == False and b['cannotConnectToAPICCounter'] < self.CONNECTION_THRESHOLD))}
