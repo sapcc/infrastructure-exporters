@@ -3,7 +3,6 @@ import socket
 import requests
 import logging
 import json
-import copy
 from prometheus_client import start_http_server
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -105,47 +104,51 @@ class Apicexporter(exporter.Exporter):
             return None
 
     def getCurrentApicToplogy(self):
+        # snapshot of apic host keys since new hosts will be discovered
+        apicHosts = list(self.apicHosts.keys())
 
-        for apicHost in self.apicHosts.keys():
+        for apicHost in apicHosts:
 
             url = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/topSystem.json?query-target-filter=eq(topSystem.role,\"controller\")"
             res = self.apicGetRequest(url, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
             if res is not None:
-                for item in res['imdata']:
-                    addr = item['topSystem']['attributes']['oobMgmtAddr']
-                    if addr in self.apicHosts.keys():
-                        self.apicHosts[addr]['apicMode']         = 'active'
-                    else:
-                        self.apicHosts[addr] = {}
-                        self.apicHosts[addr]['name']             = addr
-                        self.apicHosts[addr]['apicMode']         = 'active'
-                        self.apicHosts[addr]['canConnectToAPIC'] = True
-                        self.apicHosts[addr]['loginCookie']      = self.getApicCookie(addr,
-                                                                                      self.apicInfo['username'],
-                                                                                      self.apicInfo['password'],
-                                                                                      self.apicInfo['proxy'])
+                if isinstance(res, dict) and isinstance(res.get('imdata'), list):
+                    for item in res['imdata']:
+                        addr = item['topSystem']['attributes']['oobMgmtAddr']
+                        if addr in self.apicHosts.keys():
+                            self.apicHosts[addr]['apicMode']         = 'active'
+                        else:
+                            self.apicHosts[addr] = {}
+                            self.apicHosts[addr]['name']             = addr
+                            self.apicHosts[addr]['apicMode']         = 'active'
+                            self.apicHosts[addr]['canConnectToAPIC'] = True
+                            self.apicHosts[addr]['loginCookie']      = self.getApicCookie(addr,
+                                                                                          self.apicInfo['username'],
+                                                                                          self.apicInfo['password'],
+                                                                                          self.apicInfo['proxy'])
 
             url = "https://" + self.apicHosts[apicHost]['name'] + "/api/node/class/infraSnNode.json"
             res = self.apicGetRequest(url, self.apicHosts[apicHost]['loginCookie'], self.apicInfo['proxy'], apicHost)
 
             if res is not None:
-                for item in res['imdata']:
-                    addr = (item['infraSnNode']['attributes']['oobIpAddr']).split("/")[0]
-                    if addr == "0.0.0.0":
-                        continue
-                    mode = item['infraSnNode']['attributes']['apicMode']
-                    if addr in self.apicHosts.keys():
-                        self.apicHosts[addr]['apicMode']         = mode
-                    else:
-                        self.apicHosts[addr] = {}
-                        self.apicHosts[addr]['name']             = addr
-                        self.apicHosts[addr]['apicMode']         = mode
-                        self.apicHosts[addr]['canConnectToAPIC'] = True
-                        self.apicHosts[addr]['loginCookie']      = self.getApicCookie(addr,
-                                                                                        self.apicInfo['username'],
-                                                                                        self.apicInfo['password'],
-                                                                                        self.apicInfo['proxy'])
+                if isinstance(res, dict) and isinstance(res.get('imdata'), list):
+                    for item in res['imdata']:
+                        addr = (item['infraSnNode']['attributes']['oobIpAddr']).split("/")[0]
+                        if addr == "0.0.0.0":
+                            continue
+                        mode = item['infraSnNode']['attributes']['apicMode']
+                        if addr in self.apicHosts.keys():
+                            self.apicHosts[addr]['apicMode']         = mode
+                        else:
+                            self.apicHosts[addr] = {}
+                            self.apicHosts[addr]['name']             = addr
+                            self.apicHosts[addr]['apicMode']         = mode
+                            self.apicHosts[addr]['canConnectToAPIC'] = True
+                            self.apicHosts[addr]['loginCookie']      = self.getApicCookie(addr,
+                                                                                          self.apicInfo['username'],
+                                                                                          self.apicInfo['password'],
+                                                                                          self.apicInfo['proxy'])
 
     def getActiveApicHosts(self):
         return {a: b for a, b in self.apicHosts.items() if b['apicMode'] == 'active'}
