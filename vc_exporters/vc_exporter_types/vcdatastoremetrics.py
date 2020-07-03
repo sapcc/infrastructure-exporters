@@ -91,10 +91,10 @@ class VcDatastoreMetrics(VCExporter):
                 # maintenance mode
                 if datastore['summary.maintenanceMode'] == "normal":
                     self.gauge['vcenter_datastore_maintenance'].labels(region, datastore['summary.name'],
-                                                                       datastore['summary.type']).set(0)
+                                                                       datastore['summary.type']).set(1)
                 else:
                     self.gauge['vcenter_datastore_maintenance'].labels(region, datastore['summary.name'],
-                                                                       datastore['summary.type']).set(1)
+                                                                       datastore['summary.type']).set(0)
 
                 # capacity
                 self.gauge['vcenter_datastore_capacity_bytes'].labels(region, datastore['summary.name'],
@@ -120,12 +120,12 @@ class VcDatastoreMetrics(VCExporter):
                             self.gauge['vcenter_datastore_accessible_from_host'].labels(region,
                                                                                         datastore['summary.name'],
                                                                                         datastore['summary.type'],
-                                                                                        host.key.name).set(0)
+                                                                                        host.key.name).set(1)
                         else:
                             self.gauge['vcenter_datastore_accessible_from_host'].labels(region,
                                                                                         datastore['summary.name'],
                                                                                         datastore['summary.type'],
-                                                                                        host.key.name).set(1)
+                                                                                        host.key.name).set(0)
 
             except Exception as e:
                 logging.debug('Could not get data for datastore %s' % str(e))
