@@ -75,10 +75,10 @@ class Apichealth(Apicexporter):
             # apic is accessible
             if self.apicHosts[apicHost]['canConnectToAPIC']:
                 self.gauge['network_apic_accessible'].labels(self.apicHosts[apicHost]['name'],
-                                                             self.apicHosts[apicHost]['apicMode']).set(0)
+                                                             self.apicHosts[apicHost]['apicMode']).set(1)
             else:
                 self.gauge['network_apic_accessible'].labels(self.apicHosts[apicHost]['name'],
-                                                             self.apicHosts[apicHost]['apicMode']).set(1)
+                                                             self.apicHosts[apicHost]['apicMode']).set(0)
                 continue # do not export metrics for APIC's not accessible
 
 

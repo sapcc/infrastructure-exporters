@@ -83,10 +83,10 @@ class VcDatastoreMetrics(VCExporter):
                 # accessible state
                 if datastore['summary.accessible']:
                     self.gauge['vcenter_datastore_accessible'].labels(region, datastore['summary.name'],
-                                                                    datastore['summary.type']).set(0)
+                                                                    datastore['summary.type']).set(1)
                 else:
                     self.gauge['vcenter_datastore_accessible'].labels(region, datastore['summary.name'],
-                                                                    datastore['summary.type']).set(1)
+                                                                    datastore['summary.type']).set(0)
 
                 # maintenance mode
                 if datastore['summary.maintenanceMode'] == "normal":
