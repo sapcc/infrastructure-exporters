@@ -24,10 +24,11 @@ class Apicexporter(exporter.Exporter):
 
         self.apicHosts = {}
         for apicHost in self.apicInfo['hosts'].split(","):
-            self.apicHosts[apicHost] = {}
-            self.apicHosts[apicHost]['name'] = apicHost
-            self.apicHosts[apicHost]['canConnectToAPIC'] = True
-            self.apicHosts[apicHost]['canConnectToAPICCounter'] = 0
+            self.apicHosts[apicHost]                               = {}
+            self.apicHosts[apicHost]['name']                       = apicHost
+            self.apicHosts[apicHost]['canConnectToAPIC']           = True
+            self.apicHosts[apicHost]['canConnectToAPICCounter']    = 0
+            self.apicHosts[apicHost]['cannotConnectToAPICCounter'] = 0
             self.apicHosts[apicHost]['loginCookie'] = self.getApicCookie(apicHost, self.apicInfo['username'],
                                                         self.apicInfo['password'],
                                                         self.apicInfo['proxy'])   # Need to regex replce none with no
