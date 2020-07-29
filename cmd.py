@@ -11,8 +11,10 @@ from vc_exporters.vc_exporter_types import (vcapiandversions,
 from apic_exporters.apic_exporter_types import apichealth
 from apic_exporters.apic_exporter_types import apicprocess
 from apic_exporters.apic_exporter_types import apicip
+from osapi_exporters.osapi_exporter_types import cinderbackend
 
 EXPORTERS = {
+    'cinderbackend': cinderbackend.CinderBackend,
     'vcapiandversions': vcapiandversions.Vcapiandversions,
     'vccustomervmmetrics': vccustomervmmetrics.Vccustomervmmetrics,
     'vccustomerdsmetrics': vccustomerdsmetrics.Vccustomerdsmetrics,

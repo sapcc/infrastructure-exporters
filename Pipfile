@@ -9,6 +9,7 @@ prometheus_client = "*"
 pyvmomi = "*"
 urllib3 = "*"
 pyyaml = "*"
+openstacksdk = "*"
 
 [dev-packages]
 

@@ -1,0 +1,15 @@
+log_level: DEBUG
+prometheus_port: 9102
+device_information:
+  auth_url: https://identity-3.qa-de-1.cloud.sap/v3
+  username: <username here>
+  password: <password here>
+  user_domain_name: ccadmin
+  project_domain_name: ccadmin
+  project_name: cloud_admin
+  region: qa-de-1
+exporter_types:
+  cinderbackend:
+    name: cinderbackend
+    enabled: True
+    collection_interval: 60

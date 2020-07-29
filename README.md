@@ -10,6 +10,7 @@ Currently Available Exporters
 * vcapiandversions - Returns versions for vSphere components
 * vccustomervmmetrics - Returns metrics for customer vms running in vCenter
 * vccustomerdsmetrics - Returns metrics for customer datstores in vCenter
+* cinderbackend - Returns OpenStack cinder backend storage metrics
 
 
 Running an Exporter from cloned repo

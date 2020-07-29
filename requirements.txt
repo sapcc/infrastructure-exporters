@@ -1,0 +1,6 @@
+openstacksdk>=0.24.0
+prometheus-client
+pyyaml
+pyvmomi
+urllib3
+yamlconfig
