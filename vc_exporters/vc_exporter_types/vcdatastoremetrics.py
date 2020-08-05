@@ -13,28 +13,28 @@ class VcDatastoreMetrics(VCExporter):
 
         self.gauge['vcenter_datastore_accessible'] = Gauge('vcenter_datastore_accessible',
                                                            'vcenter_datastore_accessible',
-                                                           ['region', 'name', 'type'])
+                                                           ['region', 'datacenter', 'name', 'type'])
 
         self.gauge['vcenter_datastore_maintenance'] = Gauge('vcenter_datastore_maintenance',
                                                            'vcenter_datastore_maintenance',
-                                                           ['region', 'name', 'type'])
+                                                           ['region', 'datacenter', 'name', 'type'])
 
         self.gauge['vcenter_datastore_capacity_bytes'] = Gauge('vcenter_datastore_capacity_bytes',
                                                            'vcenter_datastore_capacity_bytes',
-                                                           ['region', 'name', 'type'])
+                                                           ['region', 'datacenter', 'name', 'type'])
 
         self.gauge['vcenter_datastore_free_space_bytes'] = Gauge('vcenter_datastore_free_space_bytes',
                                                            'vcenter_datastore_free_space_bytes',
-                                                           ['region', 'name', 'type'])
+                                                           ['region', 'datacenter', 'name', 'type'])
 
         self.gauge['vcenter_datastore_accessible_from_host'] = Gauge('vcenter_datastore_accessible_from_host',
                                                            'vcenter_datastore_accessible_from_host',
-                                                           ['region', 'name', 'type', 'host'])
+                                                           ['region', 'datacenter', 'name', 'type', 'host'])
 
 
         self.gauge['vcenter_datastore_vm_stored'] = Gauge('vcenter_datastore_vm_stored',
                                                            'vcenter_datastore_vm_stored',
-                                                           ['region', 'name', 'type'])
+                                                           ['region', 'datacenter', 'name', 'type'])
 
         self.datastore_properties =[
             "summary.name",
@@ -63,7 +63,9 @@ class VcDatastoreMetrics(VCExporter):
     def export(self):
 
         self.metric_count = 0
-        region = self.vcenterInfo['hostname'].split('.')[2]
+        region      = self.vcenterInfo['hostname'].split('.')[2]
+        datacenter  = region + (self.vcenterInfo['hostname'].split('.')[0]).split('-')[1]
+
 
         for datastore in self.data:
             # discard management datastores
@@ -82,31 +84,31 @@ class VcDatastoreMetrics(VCExporter):
 
                 # accessible state
                 if datastore['summary.accessible']:
-                    self.gauge['vcenter_datastore_accessible'].labels(region, datastore['summary.name'],
+                    self.gauge['vcenter_datastore_accessible'].labels(region, datacenter, datastore['summary.name'],
                                                                     datastore['summary.type']).set(1)
                 else:
-                    self.gauge['vcenter_datastore_accessible'].labels(region, datastore['summary.name'],
+                    self.gauge['vcenter_datastore_accessible'].labels(region, datacenter, datastore['summary.name'],
                                                                     datastore['summary.type']).set(0)
 
                 # maintenance mode
                 if datastore['summary.maintenanceMode'] == "normal":
-                    self.gauge['vcenter_datastore_maintenance'].labels(region, datastore['summary.name'],
+                    self.gauge['vcenter_datastore_maintenance'].labels(region, datacenter, datastore['summary.name'],
                                                                        datastore['summary.type']).set(1)
                 else:
-                    self.gauge['vcenter_datastore_maintenance'].labels(region, datastore['summary.name'],
+                    self.gauge['vcenter_datastore_maintenance'].labels(region, datacenter, datastore['summary.name'],
                                                                        datastore['summary.type']).set(0)
 
                 # capacity
-                self.gauge['vcenter_datastore_capacity_bytes'].labels(region, datastore['summary.name'],
+                self.gauge['vcenter_datastore_capacity_bytes'].labels(region, datacenter, datastore['summary.name'],
                                                                       datastore['summary.type']).set(str(datastore['summary.capacity']))
 
                 # free space
-                self.gauge['vcenter_datastore_free_space_bytes'].labels(region, datastore['summary.name'],
+                self.gauge['vcenter_datastore_free_space_bytes'].labels(region, datacenter, datastore['summary.name'],
                                                                         datastore['summary.type']).set(str(datastore['summary.freeSpace']))
 
 
                 # number of virtual machines associated to the host
-                self.gauge['vcenter_datastore_vm_stored'].labels(region, datastore['summary.name'],
+                self.gauge['vcenter_datastore_vm_stored'].labels(region, datacenter, datastore['summary.name'],
                                                                  datastore['summary.type']).set(len(datastore['vm']))
 
                 # access from mounted host
@@ -117,12 +119,12 @@ class VcDatastoreMetrics(VCExporter):
 
                     if not host.key.runtime.inMaintenanceMode: # only hosts which are not in maintenance
                         if host.mountInfo.accessible:
-                            self.gauge['vcenter_datastore_accessible_from_host'].labels(region,
+                            self.gauge['vcenter_datastore_accessible_from_host'].labels(region, datacenter,
                                                                                         datastore['summary.name'],
                                                                                         datastore['summary.type'],
                                                                                         host.key.name).set(1)
                         else:
-                            self.gauge['vcenter_datastore_accessible_from_host'].labels(region,
+                            self.gauge['vcenter_datastore_accessible_from_host'].labels(region, datacenter,
                                                                                         datastore['summary.name'],
                                                                                         datastore['summary.type'],
                                                                                         host.key.name).set(0)
