@@ -58,10 +58,6 @@ class Vcapiandversions(VCExporter):
                                                     'Count of configured failover nodes in the cluster',
                                                     ['hostname', 'vccluster'])
 
-        self.gauge['vcenter_overbooked_node_mb'] = Gauge('vcenter_overbooked_node_mb',
-                                                    'Node where memory of big VMs exceeds physical memory in MB',
-                                                    ['hostname', 'node'])
-
         self.gauge['vcenter_cluster_ha_configured'] = Gauge('vcenter_cluster_ha_configured',
                                                     'Cluster with correct HA policy set',
                                                     ['hostname', 'vccluster'])
@@ -158,7 +154,6 @@ class Vcapiandversions(VCExporter):
                 logging.debug(
                     "Couldn't get maintenance state for host: " + host['summary.config.name'] + " " + str(e))
 
-        self.manage_ram_counting()
         self.do_failover_metrics()
 
         # Get current session information and check with saved sessions info
@@ -387,39 +382,3 @@ class Vcapiandversions(VCExporter):
         for clustername in failoverLevel.keys():
             self.gauge['vcenter_failover_nodes_set'].labels(self.vcenterInfo['hostname'],clustername).set(failoverLevel[clustername])
             self.metric_count += 1
-
-
-    def manage_ram_counting(self):
-        threads = list()
-        #we better don't put too much load on it
-        semaphore = Semaphore(12)
-        for host in self.host_data:
-            thread = Thread(target=self.count_host_big_vms,args=(host,semaphore,))
-            threads.append(thread)
-            thread.start()
-        for t in threads:
-            t.join()
-
-    def count_host_big_vms(self, host, semaphore):
-        semaphore.acquire()
-        # logging.debug("looking into " + host['summary.config.name'])
-        host_memory_mb = host["hardware.memorySize"] / 1024 / 1024
-        host_vms_sum_mb = 0
-        for vm in host['vm']:
-            # we only want vms > 256GB
-            try:
-                if hasattr(vm.summary.config, 'memorySizeMB') and hasattr(vm.runtime, 'powerState'):
-                    if vm.summary.config.memorySizeMB and vm.runtime.powerState == 'poweredOn':
-                        if vm.summary.config.memorySizeMB >= 231056:
-                            logging.debug("VM: %s ConfigMemorySizeMB: %s", vm.name, vm.summary.config.memorySizeMB)
-                            host_vms_sum_mb += vm.summary.config.memorySizeMB
-            except Exception as e:
-                #for now i want to see it regardless of logging
-                print("probably deleted VM found, ignoring: " + str(e))
-        diff_mb = host_vms_sum_mb - host_memory_mb
-        if diff_mb > self.MEM_THRESHOLD:
-            logging.debug("found overbooked hv: " + host['summary.config.name'] + " host memory: " + str(host_memory_mb) + " vms: " + str(host_vms_sum_mb))
-            self.gauge['vcenter_overbooked_node_mb'].labels(self.vcenterInfo['hostname'],host['summary.config.name']).set(int(diff_mb))
-        else:
-            self.gauge['vcenter_overbooked_node_mb'].labels(self.vcenterInfo['hostname'],host['summary.config.name']).set(0)
-        semaphore.release()
