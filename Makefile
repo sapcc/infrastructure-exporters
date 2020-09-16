@@ -1,6 +1,6 @@
 SHELL       := /bin/sh
-IMAGE       := hub.global.cloud.sap/monsoon/infrastructure-exporters
-VERSION     := latest
+IMAGE       := keppel.eu-de-1.cloud.sap/ccloud/infrastructure-exporters
+VERSION     := 20200916121200
 
 ### Executables
 DOCKER := docker
