@@ -315,13 +315,13 @@ class Vcapiandversions(VCExporter):
                 try:
                     if cluster.configuration.dasConfig.admissionControlEnabled \
                         and cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel >= 1 \
-                        and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) == 1:
+                        and len(cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts) >= 1:
 
                         failoverLevel[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverLevel
                         failoverHosts[cluster.name] = cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts
                         logging.debug("cluster: %s failoverLevel: %s failoverHosts: %s", cluster.name, failoverLevel[cluster.name], len(failoverHosts[cluster.name]))
 
-                        self.gauge['vcenter_cluster_ha_configured'].labels(self.vcenterInfo['hostname'],cluster.name).set(1)
+                        self.gauge['vcenter_cluster_ha_configured'].labels(self.vcenterInfo['hostname'],cluster.name).set(len(failoverHosts[cluster.name]))
 
                         for host in cluster.configuration.dasConfig.admissionControlPolicy.failoverHosts:
                             logging.debug("cluster: %s failoverHost: %s", cluster.name, host.name)
