@@ -1,4 +1,4 @@
-FROM keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+FROM keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/python:3.6-alpine
 LABEL source_repository="https://github.com/sapcc/infrastructure-exporters"
 
 RUN apk add dumb-init
