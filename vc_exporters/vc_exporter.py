@@ -1,6 +1,7 @@
 import exporter
 import socket
 import ssl
+import master_password
 from pyVmomi import vmodl
 from pyVim.connect import SmartConnect, Disconnect
 from prometheus_client import start_http_server
@@ -14,7 +15,9 @@ class VCExporter(exporter.Exporter):
         self.vcenterInfo = self.exporterConfig['device_information']
         self.exporterInfo = self.exporterConfig['exporter_types'][self.exporterType]
         self.duration = int(self.exporterInfo['collection_interval'])
-        self.enabled  = bool(self.exporterInfo['enabled'])
+        self.vcenterInfo['password'] = self.generate_pw(self.vcenterInfo['username'], self.vcenterInfo['password'],
+                                                        self.vcenterInfo['hostname'])
+        self.enabled = bool(self.exporterInfo['enabled'])
         self.si = self.connect_to_vcenter(self.vcenterInfo['hostname'],
                                           self.vcenterInfo['username'],
                                           self.vcenterInfo['password'],
@@ -23,6 +26,10 @@ class VCExporter(exporter.Exporter):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(('localhost', int(self.exporterConfig['prometheus_port']))) != 0:
                 start_http_server(int(self.exporterConfig['prometheus_port']))
+
+    def generate_pw(self, user, mpw, url):
+        handle = master_password.MPW(user, mpw)
+        return handle.password(url)
 
     def connect_to_vcenter(self, host, user, pwd, port, ignore_ssl):
 
