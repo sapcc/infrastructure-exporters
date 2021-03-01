@@ -1,9 +1,10 @@
 log_level: DEBUG
 prometheus_port: 9102
 device_information:
-  hostname: vc-a-0.cc.eu-de-2.cloud.sap
-  username: m3apiuser0
-  password: "GijmNowjSofe5:"
+  hostname: vc.test.local
+  username: administrator@vsphere.local
+  # note: this is the masterpassword to generate the actual pw
+  password: masterpassword
   port: 443
   ignore_ssl: true
 exporter_types:
