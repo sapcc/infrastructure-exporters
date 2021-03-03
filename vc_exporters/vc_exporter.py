@@ -17,6 +17,7 @@ class VCExporter(exporter.Exporter):
         self.duration = int(self.exporterInfo['collection_interval'])
         self.vcenterInfo['password'] = self.generate_pw(self.vcenterInfo['username'], self.vcenterInfo['password'],
                                                         self.vcenterInfo['hostname'])
+        self.enabled = bool(self.exporterInfo['enabled'])
         self.si = self.connect_to_vcenter(self.vcenterInfo['hostname'],
                                           self.vcenterInfo['username'],
                                           self.vcenterInfo['password'],
